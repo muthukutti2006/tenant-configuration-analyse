@@ -1,0 +1,39 @@
+{
+  "tenant_id": "UNI-006",
+  "tenant_name": "Riverside College",
+  "version": "2.3.0",
+  "modules": {
+    "admissions": {
+      "enabled": true,
+      "minimum_eligibility_percentage": 60
+    },
+    "fees": {
+      "enabled": true,
+      "payment_required_before_admission": false,
+      "grace_period_days": 14,
+      "late_fee_applicable": false
+    },
+    "attendance": {
+      "enabled": true,
+      "minimum_attendance": 75,
+      "exam_eligibility_attendance": 75
+    },
+    "certificates": {
+      "enabled": true,
+      "fee_clearance_required": true,
+      "attendance_clearance_required": false,
+      "digital_signature_required": false
+    }
+  },
+  "feature_flags": {
+    "online_payment": true,
+    "digital_certificate": false,
+    "self_registration": false,
+    "bulk_upload": false
+  },
+  "metadata": {
+    "description": "Duplicate threshold: minimum_attendance == exam_eligibility_attendance (both 75). Also: late_fee_applicable=false but grace_period_days=14.",
+    "scenario": "Duplicate rule conflict",
+    "expected_conflicts": ["DUPLICATE_OR_CONTRADICTORY_RULE"]
+  }
+}

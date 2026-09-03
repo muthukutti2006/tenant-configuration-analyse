@@ -1,0 +1,37 @@
+{
+  "tenant_id": "UNI-004",
+  "tenant_name": "Eastbridge Academy",
+  "version": "2.0.0",
+  "modules": {
+    "admissions": {
+      "enabled": true,
+      "minimum_eligibility_percentage": 60
+    },
+    "fees": {
+      "enabled": false,
+      "payment_required_before_admission": false
+    },
+    "attendance": {
+      "enabled": true,
+      "minimum_attendance": 75,
+      "exam_eligibility_attendance": 75
+    },
+    "certificates": {
+      "enabled": true,
+      "fee_clearance_required": true,
+      "attendance_clearance_required": false,
+      "digital_signature_required": false
+    }
+  },
+  "feature_flags": {
+    "online_payment": false,
+    "digital_certificate": true,
+    "self_registration": true,
+    "bulk_upload": false
+  },
+  "metadata": {
+    "description": "Certificates require fee clearance but the fees module is disabled. Dependency conflict.",
+    "scenario": "Certificate dependency conflict",
+    "expected_conflicts": ["DEPENDENCY_CONFLICT"]
+  }
+}

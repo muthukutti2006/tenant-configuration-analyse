@@ -1,0 +1,46 @@
+{
+  "tenant_id": "UNI-008",
+  "tenant_name": "Metropolitan University Consortium",
+  "version": "4.0.0-beta",
+  "modules": {
+    "admissions": {
+      "enabled": true,
+      "minimum_eligibility_percentage": 60,
+      "exam_eligibility_attendance": 85
+    },
+    "fees": {
+      "enabled": false,
+      "payment_required_before_admission": true,
+      "grace_period_days": 7,
+      "late_fee_applicable": false
+    },
+    "attendance": {
+      "enabled": false,
+      "minimum_attendance": 75,
+      "exam_eligibility_attendance": 90
+    },
+    "certificates": {
+      "enabled": true,
+      "fee_clearance_required": true,
+      "attendance_clearance_required": true,
+      "digital_signature_required": true
+    }
+  },
+  "feature_flags": {
+    "online_payment": false,
+    "digital_certificate": false,
+    "self_registration": true,
+    "bulk_upload": false,
+    "api_integration": true
+  },
+  "metadata": {
+    "description": "Multiple simultaneous conflicts: dependency conflict (fees disabled + fee clearance required), dependency conflict (attendance disabled + attendance clearance required), feature flag conflict (online_payment=false + payment_required=true), feature flag conflict (digital_certificate=false + digital_signature_required=true), direct rule conflict (attendance min 75 vs exam 90), cross-module attendance mismatch (admissions=85 vs attendance=90).",
+    "scenario": "Multiple simultaneous conflicts",
+    "expected_conflicts": [
+      "DIRECT_RULE_CONFLICT",
+      "FEATURE_FLAG_CONFLICT",
+      "DEPENDENCY_CONFLICT",
+      "DUPLICATE_OR_CONTRADICTORY_RULE"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "tenant_id": "UNI-003",
+  "tenant_name": "Northern Plains College",
+  "version": "3.0.1",
+  "modules": {
+    "admissions": {
+      "enabled": true,
+      "minimum_eligibility_percentage": 65
+    },
+    "fees": {
+      "enabled": true,
+      "payment_required_before_admission": true,
+      "grace_period_days": 0,
+      "late_fee_applicable": true
+    },
+    "attendance": {
+      "enabled": true,
+      "minimum_attendance": 80,
+      "exam_eligibility_attendance": 80
+    },
+    "certificates": {
+      "enabled": true,
+      "fee_clearance_required": true,
+      "attendance_clearance_required": false,
+      "digital_signature_required": false
+    }
+  },
+  "feature_flags": {
+    "online_payment": false,
+    "digital_certificate": false,
+    "self_registration": true,
+    "bulk_upload": false
+  },
+  "metadata": {
+    "description": "Online payment is disabled but payment is required before admission. Feature flag conflict.",
+    "scenario": "Fee/payment conflict",
+    "expected_conflicts": ["FEATURE_FLAG_CONFLICT"]
+  }
+}
