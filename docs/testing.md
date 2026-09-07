@@ -15,7 +15,8 @@ cd "d:\attendance project\backend"
 pytest tests/ -v
 ```
 
-**Expected output:** 43 passed, 0 failed, 0 skipped
+**Expected output:** 93 passed, 0 failed, 0 skipped  
+_(43 original in `test_engine.py` + 50 new in `test_drift.py`)_
 
 ---
 
@@ -106,64 +107,74 @@ pytest tests/ -v
 
 ---
 
-## Actual Test Results
+## Actual Test Results (Review-2)
 
 ```
 ============================= test session starts =============================
-platform win32 -- Python 3.12.9, pytest-8.2.2
-collected 43 items
+platform win32 -- Python 3.12, pytest-8.2.2
+collected 93 items
 
-tests/test_engine.py::TestParser::test_parse_valid_config PASSED
-tests/test_engine.py::TestParser::test_parse_empty_config PASSED
-tests/test_engine.py::TestParser::test_parse_missing_required_field PASSED
-tests/test_engine.py::TestParser::test_parse_missing_modules PASSED
-tests/test_engine.py::TestParser::test_parse_unknown_module PASSED
-tests/test_engine.py::TestParser::test_parse_invalid_json_string PASSED
-tests/test_engine.py::TestValidator::test_valid_config_no_errors PASSED
-tests/test_engine.py::TestValidator::test_percentage_above_100 PASSED
-tests/test_engine.py::TestValidator::test_percentage_below_0 PASSED
-tests/test_engine.py::TestValidator::test_invalid_boolean_type PASSED
-tests/test_engine.py::TestValidator::test_missing_enabled_field PASSED
-tests/test_engine.py::TestNormalizer::test_normalize_produces_rules PASSED
-tests/test_engine.py::TestNormalizer::test_normalize_includes_all_modules PASSED
-tests/test_engine.py::TestNormalizer::test_normalize_includes_feature_flags PASSED
-tests/test_engine.py::TestNormalizer::test_normalize_rule_paths_are_unique PASSED
-tests/test_engine.py::TestDetector::test_no_conflicts_on_normal_config PASSED
-tests/test_engine.py::TestDetector::test_direct_rule_conflict_detected PASSED
-tests/test_engine.py::TestDetector::test_feature_flag_conflict_detected PASSED
-tests/test_engine.py::TestDetector::test_dependency_conflict_detected PASSED
-tests/test_engine.py::TestDetector::test_duplicate_rule_detected PASSED
-tests/test_engine.py::TestDetector::test_multiple_conflicts_detected PASSED
-tests/test_engine.py::TestDetector::test_no_false_positive_on_valid_thresholds PASSED
-tests/test_engine.py::TestClassifier::test_dependency_conflict_is_critical PASSED
-tests/test_engine.py::TestClassifier::test_direct_rule_conflict_is_high PASSED
-tests/test_engine.py::TestClassifier::test_duplicate_rule_is_low_or_medium PASSED
-tests/test_engine.py::TestClassifier::test_invalid_config_is_critical PASSED
-tests/test_engine.py::TestEvidence::test_high_conflicts_have_evidence PASSED
-tests/test_engine.py::TestEvidence::test_critical_conflicts_have_evidence PASSED
-tests/test_engine.py::TestEvidence::test_low_medium_conflicts_have_no_evidence PASSED
-tests/test_engine.py::TestEvidence::test_evidence_report_structure PASSED
-tests/test_engine.py::TestEdgeCases::test_edge_missing_required_field PASSED
-tests/test_engine.py::TestEdgeCases::test_edge_conflicting_feature_flags PASSED
-tests/test_engine.py::TestEdgeCases::test_edge_module_dependency_conflict PASSED
-tests/test_engine.py::TestEdgeCases::test_edge_attendance_above_100 PASSED
-tests/test_engine.py::TestEdgeCases::test_edge_empty_configuration PASSED
-tests/test_engine.py::TestEdgeCases::test_edge_unknown_module PASSED
-tests/test_engine.py::TestAPI::test_health_endpoint PASSED
-tests/test_engine.py::TestAPI::test_analyze_valid_config PASSED
-tests/test_engine.py::TestAPI::test_analyze_returns_real_conflicts PASSED
-tests/test_engine.py::TestAPI::test_list_configurations PASSED
-tests/test_engine.py::TestAPI::test_analyze_all PASSED
-tests/test_engine.py::TestAPI::test_list_all_conflicts PASSED
-tests/test_engine.py::TestAPI::test_list_rules PASSED
+tests/test_drift.py::TestDriftDetector::... (13 tests) PASSED
+tests/test_drift.py::TestBaselineStore::... (8 tests)  PASSED
+tests/test_drift.py::TestRuleCatalog::...  (6 tests)   PASSED
+tests/test_drift.py::TestExperiment::...   (9 tests)   PASSED
+tests/test_drift.py::TestNewAPIEndpoints:: (14 tests)  PASSED
+tests/test_engine.py::TestParser::...      (6 tests)   PASSED
+tests/test_engine.py::TestValidator::...   (5 tests)   PASSED
+tests/test_engine.py::TestNormalizer::...  (4 tests)   PASSED
+tests/test_engine.py::TestDetector::...    (7 tests)   PASSED
+tests/test_engine.py::TestClassifier::...  (4 tests)   PASSED
+tests/test_engine.py::TestEvidence::...    (4 tests)   PASSED
+tests/test_engine.py::TestEdgeCases::...   (6 tests)   PASSED
+tests/test_engine.py::TestAPI::...         (7 tests)   PASSED
 
-============================= 43 passed in 1.56s ==============================
+============================== 93 passed in 1.56s ==============================
 ```
+
+---
+
+## Review-2 Test Classes (test_drift.py — 50 tests)
+
+### TestDriftDetector (13 tests)
+
+| Test | What is verified |
+|------|----------------|
+| `test_added_field_detected` | ADDED drift type appears when field is new in candidate |
+| `test_removed_field_detected` | REMOVED drift type when field deleted from candidate |
+| `test_changed_field_detected` | CHANGED drift type when value differs |
+| `test_no_drift_on_identical_configs` | Zero findings when baseline == candidate |
+| `test_feature_flag_drift_detected` | `feature_flags.online_payment` change detected |
+| `test_module_disabled_is_critical` | `fees.enabled` true→false → CRITICAL |
+| `test_attendance_change_is_high` | `exam_eligibility_attendance` change → HIGH |
+| `test_added_field_is_low_severity` | All ADDED findings are LOW severity |
+| `test_summary_counts_match_findings` | Summary counts consistent with findings list |
+| `test_evidence_populated` | Every finding has non-empty reason and recommendation |
+| `test_nested_field_change_detected` | Deep nested field (minimum_eligibility_percentage) detected |
+| `test_version_comparison_report_structure` | DriftReport has required fields |
+| `test_flatten_function` | Dot-path flattener works on nested dict |
+
+### TestBaselineStore (8 tests)
+
+Covers: `list_tenants_with_baselines`, `list_versions`, `load_baseline`, `load_latest_baseline`, `get_baseline_record`, `list_all_baselines`, not-found returns None, real UNI-001 v1→v2 comparison.
+
+### TestRuleCatalog (6 tests)
+
+Covers: count ≥ 12, required fields on all rules, category filter, severity filter, drift rules present, conflict rules present.
+
+### TestExperiment (9 tests)
+
+Covers: experiment runs without error, 4 scenarios, SYNTHETIC label, avoided definition, metrics types, EXP-001 threshold detection, EXP-002 module disabled detection, EXP-004 clean no-findings, all 4 IDs present.
+
+### TestNewAPIEndpoints (14 tests)
+
+Covers all 11 new endpoints via FastAPI TestClient: list baselines, tenant baselines, specific baseline, 404s, POST `/api/drift`, POST `compare`, version comparison, version not-found 404, GET `/api/catalog`, catalog filters (category, severity), GET `/api/experiment`.
 
 ---
 
 ## Known Limitations
 
-- Frontend tests (Vitest) are not yet implemented — TypeScript type checking passes.
-- The ML/anomaly detection module has no tests (it does not exist yet).
+- Frontend tests (Vitest) are not implemented — TypeScript type checking (`tsc -b`) passes with 0 errors.
+- Code coverage percentage is not measured — no `--cov` flag used in this review.
+- The ML/anomaly detection module does not exist and has no tests (by design).
 - Performance tests for large tenant sets (>1000 configs) are future work.
+
