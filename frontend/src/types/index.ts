@@ -91,3 +91,122 @@ export interface ConflictRule {
   description: string;
   default_severity: Severity;
 }
+
+// ─── Drift Detection Types ────────────────────────────────────────────────────
+
+export type DriftType = "ADDED" | "REMOVED" | "CHANGED" | "UNCHANGED";
+export type DriftSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+
+export interface DriftEvidence {
+  reason: string;
+  impact: string;
+  recommendation: string;
+}
+
+export interface DriftFinding {
+  id: string;
+  tenant_id: string;
+  baseline_version: string;
+  candidate_version: string;
+  drift_type: DriftType;
+  field: string;
+  old_value: unknown;
+  new_value: unknown;
+  severity: DriftSeverity;
+  evidence: DriftEvidence;
+}
+
+export interface DriftSummary {
+  total_findings: number;
+  added: number;
+  removed: number;
+  changed: number;
+  unchanged: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+export interface DriftReport {
+  tenant_id: string;
+  tenant_name: string;
+  baseline_version: string;
+  candidate_version: string;
+  summary: DriftSummary;
+  findings: DriftFinding[];
+}
+
+// ─── Baseline Store Types ──────────────────────────────────────────────────────
+
+export interface BaselineRecord {
+  tenant_id: string;
+  tenant_name: string;
+  version: string;
+  baseline_label: string;
+  timestamp?: string;
+  approved_by?: string;
+  config: Record<string, unknown>;
+}
+
+// ─── Rule Catalogue Types ─────────────────────────────────────────────────────
+
+export interface CatalogRule {
+  rule_id: string;
+  category: string;
+  name: string;
+  description: string;
+  condition: string;
+  severity: string;
+  evidence_template: string;
+  enabled: boolean;
+  rule_type: string;
+}
+
+// ─── Experiment Types ─────────────────────────────────────────────────────────
+
+export interface ExperimentScenario {
+  id: string;
+  description: string;
+  notes: string;
+  baseline: string;
+  candidate_version: string;
+  ground_truth_issues: string[];
+  manual_catches: string[];
+  drift_findings_total: number;
+  drift_findings_actionable: number;
+  actionable_findings: {
+    field: string;
+    drift_type: string;
+    severity: string;
+    old_value: unknown;
+    new_value: unknown;
+    reason: string;
+    recommendation: string;
+  }[];
+  tp: number;
+  fp: number;
+  fn: number;
+  tn: number;
+  avoided: number;
+  avoided_issues: string[];
+  error?: string;
+}
+
+export interface ExperimentResult {
+  experiment_label: string;
+  data_note: string;
+  definition_of_avoided: string;
+  total_scenarios: number;
+  total_tp: number;
+  total_fp: number;
+  total_fn: number;
+  total_tn: number;
+  total_detected: number;
+  total_avoided: number;
+  precision: number | null;
+  recall: number | null;
+  f1: number | null;
+  scenarios: ExperimentScenario[];
+}
+

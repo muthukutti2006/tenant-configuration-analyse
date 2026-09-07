@@ -1,0 +1,15 @@
+{
+  "tenant_id": "UNI-002",
+  "tenant_name": "Summit Institute of Technology",
+  "version": "1.0",
+  "baseline_label": "approved_production",
+  "timestamp": "2026-02-01T09:00:00Z",
+  "approved_by": "admin",
+  "modules": {
+    "admissions": {"enabled": true, "minimum_eligibility_percentage": 55, "exam_eligibility_attendance": 75},
+    "fees": {"enabled": true, "payment_required_before_admission": false, "grace_period_days": 15, "late_fee_applicable": true},
+    "attendance": {"enabled": true, "minimum_attendance": 75, "exam_eligibility_attendance": 75},
+    "certificates": {"enabled": true, "fee_clearance_required": true, "attendance_clearance_required": false, "digital_signature_required": false}
+  },
+  "feature_flags": {"online_payment": true, "digital_certificate": false, "self_registration": false, "bulk_upload": true}
+}

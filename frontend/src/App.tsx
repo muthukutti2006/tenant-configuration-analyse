@@ -8,6 +8,8 @@ import { ConfigurationsPage } from "./pages/ConfigurationsPage";
 import { RulesPage } from "./pages/RulesPage";
 import { ApproachPage } from "./pages/ApproachPage";
 import { AboutPage } from "./pages/AboutPage";
+import { DriftPage } from "./pages/DriftPage";
+import { CatalogPage } from "./pages/CatalogPage";
 
 export default function App() {
   return (
@@ -17,7 +19,9 @@ export default function App() {
           <Route path="/" element={<OverviewPage />} />
           <Route path="/analyze" element={<AnalyzePage />} />
           <Route path="/conflicts" element={<ConflictsPage />} />
+          <Route path="/drift" element={<DriftPage />} />
           <Route path="/configurations" element={<ConfigurationsPage />} />
+          <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/rules" element={<RulesPage />} />
           <Route path="/approach" element={<ApproachPage />} />
           <Route path="/about" element={<AboutPage />} />

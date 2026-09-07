@@ -1,0 +1,15 @@
+{
+  "tenant_id": "UNI-001",
+  "tenant_name": "Greenfield University",
+  "version": "2.0",
+  "baseline_label": "approved_production",
+  "timestamp": "2026-06-01T10:00:00Z",
+  "approved_by": "admin",
+  "modules": {
+    "admissions": {"enabled": true, "minimum_eligibility_percentage": 65, "merit_based_selection": true},
+    "fees": {"enabled": true, "payment_required_before_admission": false, "grace_period_days": 15, "late_fee_applicable": true},
+    "attendance": {"enabled": true, "minimum_attendance": 75, "exam_eligibility_attendance": 80},
+    "certificates": {"enabled": true, "fee_clearance_required": true, "attendance_clearance_required": true, "digital_signature_required": false}
+  },
+  "feature_flags": {"online_payment": true, "digital_certificate": true, "self_registration": true, "bulk_upload": false}
+}

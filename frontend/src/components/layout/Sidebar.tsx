@@ -8,6 +8,9 @@ import {
   Database,
   BookOpen,
   GitCompare,
+  GitBranch,
+  FlaskConical,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -15,7 +18,9 @@ const links = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
   { to: "/analyze", label: "Analyze Config", icon: ScanSearch },
   { to: "/conflicts", label: "All Conflicts", icon: AlertTriangle },
+  { to: "/drift", label: "Configuration Drift", icon: GitBranch },
   { to: "/configurations", label: "Test Configurations", icon: Database },
+  { to: "/catalog", label: "Rules Catalogue", icon: ListChecks },
   { to: "/rules", label: "Detection Rules", icon: FileText },
   { to: "/approach", label: "Technical Approach", icon: GitCompare },
   { to: "/about", label: "Documentation", icon: BookOpen },
@@ -61,8 +66,8 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="px-5 py-4 border-t border-slate-700">
-        <p className="text-xs text-slate-500">Review-1 Prototype</p>
-        <p className="text-xs text-slate-600">v1.0.0-review1</p>
+        <p className="text-xs text-slate-500">Review-2 Prototype</p>
+        <p className="text-xs text-slate-600">v2.0.0-review2</p>
       </div>
     </aside>
   );
