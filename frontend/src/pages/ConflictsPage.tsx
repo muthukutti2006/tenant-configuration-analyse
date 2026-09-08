@@ -2,16 +2,25 @@ import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { Conflict, Severity, ConflictType } from "../types";
 import { ConflictCard } from "../components/conflicts/ConflictCard";
-import { Card, CardContent } from "../components/ui/Card";
-import { Search } from "lucide-react";
+import { SectionHeader, ErrorState, FilterBar, SearchInput, SelectFilter, EmptyState } from "../components/ui/Shared";
+import { MetricCard } from "../components/ui/MetricCard";
+import { AlertTriangle, Shield, AlertOctagon, Info } from "lucide-react";
 
-const SEVERITY_OPTIONS: Severity[] = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
-const TYPE_OPTIONS: ConflictType[] = [
-  "DIRECT_RULE_CONFLICT",
-  "FEATURE_FLAG_CONFLICT",
-  "DEPENDENCY_CONFLICT",
-  "DUPLICATE_OR_CONTRADICTORY_RULE",
-  "INVALID_CONFIGURATION",
+const SEVERITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "ALL", label: "All Severities" },
+  { value: "CRITICAL", label: "Critical" },
+  { value: "HIGH", label: "High" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "LOW", label: "Low" },
+];
+
+const TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "ALL", label: "All Types" },
+  { value: "DIRECT_RULE_CONFLICT", label: "Direct Rule Conflict" },
+  { value: "FEATURE_FLAG_CONFLICT", label: "Feature Flag Conflict" },
+  { value: "DEPENDENCY_CONFLICT", label: "Dependency Conflict" },
+  { value: "DUPLICATE_OR_CONTRADICTORY_RULE", label: "Duplicate / Contradictory" },
+  { value: "INVALID_CONFIGURATION", label: "Invalid Configuration" },
 ];
 
 export function ConflictsPage() {
@@ -19,8 +28,8 @@ export function ConflictsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [filterSeverity, setFilterSeverity] = useState<Severity | "ALL">("ALL");
-  const [filterType, setFilterType] = useState<ConflictType | "ALL">("ALL");
+  const [filterSeverity, setFilterSeverity] = useState("ALL");
+  const [filterType, setFilterType] = useState("ALL");
 
   useEffect(() => {
     api
@@ -30,107 +39,83 @@ export function ConflictsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = conflicts.filter((c) => {
-    if (filterSeverity !== "ALL" && c.severity !== filterSeverity) return false;
-    if (filterType !== "ALL" && c.conflict_type !== filterType) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (
-        c.title.toLowerCase().includes(q) ||
-        c.description.toLowerCase().includes(q) ||
-        c.tenant_name?.toLowerCase().includes(q) ||
-        c.tenant_id?.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const filtered = conflicts
+    .filter((c) => {
+      if (filterSeverity !== "ALL" && c.severity !== filterSeverity) return false;
+      if (filterType !== "ALL" && c.conflict_type !== filterType) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        return (
+          c.title.toLowerCase().includes(q) ||
+          c.description.toLowerCase().includes(q) ||
+          (c.tenant_name?.toLowerCase().includes(q) ?? false) ||
+          (c.tenant_id?.toLowerCase().includes(q) ?? false)
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const order: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+      return (order[a.severity] ?? 4) - (order[b.severity] ?? 4);
+    });
 
-  const sorted = [...filtered].sort((a, b) => {
-    const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-    return order[a.severity] - order[b.severity];
-  });
+  const critCount = conflicts.filter((c) => c.severity === "CRITICAL").length;
+  const highCount = conflicts.filter((c) => c.severity === "HIGH").length;
+  const medCount  = conflicts.filter((c) => c.severity === "MEDIUM").length;
+  const lowCount  = conflicts.filter((c) => c.severity === "LOW").length;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-500 animate-pulse">
-        Loading conflicts…
+      <div>
+        <SectionHeader title="All Conflicts" subtitle="Loading conflict intelligence…" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px", marginBottom: "20px" }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="skeleton" style={{ height: "80px", borderRadius: "10px" }} />
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="rounded-md bg-red-50 border border-red-200 p-4 text-red-700 text-sm">
-        <strong>Error:</strong> {error}
-      </div>
-    );
-  }
+  if (error) return <ErrorState message={error} />;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">All Conflicts</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {conflicts.length} conflict{conflicts.length !== 1 ? "s" : ""} detected across all tenant configurations
-        </p>
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      <SectionHeader
+        title="All Conflicts"
+        subtitle={`${conflicts.length} conflict${conflicts.length !== 1 ? "s" : ""} detected across all tenant configurations`}
+      />
+
+      {/* Severity summary cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px" }}>
+        <MetricCard label="Critical" value={critCount} icon={Shield} accent="var(--c-critical)" />
+        <MetricCard label="High" value={highCount} icon={AlertOctagon} accent="var(--c-high)" />
+        <MetricCard label="Medium" value={medCount} icon={AlertTriangle} accent="var(--c-medium)" />
+        <MetricCard label="Low" value={lowCount} icon={Info} accent="var(--c-low)" />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        {/* Search */}
-        <div className="relative flex-1 min-w-52">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search conflicts, tenants…"
-            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+      <FilterBar>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search conflicts, tenants…" />
+        <SelectFilter value={filterSeverity} onChange={setFilterSeverity} options={SEVERITY_OPTIONS} />
+        <SelectFilter value={filterType} onChange={setFilterType} options={TYPE_OPTIONS} />
+        {(search || filterSeverity !== "ALL" || filterType !== "ALL") && (
+          <span style={{ fontSize: "12px", color: "var(--text-muted)", alignSelf: "center" }}>
+            {filtered.length} of {conflicts.length} shown
+          </span>
+        )}
+      </FilterBar>
 
-        {/* Severity filter */}
-        <select
-          value={filterSeverity}
-          onChange={(e) => setFilterSeverity(e.target.value as Severity | "ALL")}
-          className="px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-        >
-          <option value="ALL">All Severities</option>
-          {SEVERITY_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-
-        {/* Type filter */}
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value as ConflictType | "ALL")}
-          className="px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-        >
-          <option value="ALL">All Types</option>
-          {TYPE_OPTIONS.map((t) => (
-            <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Result count */}
-      {(search || filterSeverity !== "ALL" || filterType !== "ALL") && (
-        <p className="text-sm text-slate-500">
-          Showing {sorted.length} of {conflicts.length} conflicts
-        </p>
-      )}
-
-      {/* Conflicts list */}
-      {sorted.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center h-32 text-slate-400">
-            <p className="text-sm">No conflicts match your filters.</p>
-          </CardContent>
-        </Card>
+      {/* Conflict list */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title="No conflicts match your filters"
+          description="Adjust the search or filters above to see results."
+        />
       ) : (
-        <div className="space-y-3">
-          {sorted.map((c) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {filtered.map((c) => (
             <ConflictCard key={c.id} conflict={c} defaultExpanded={false} />
           ))}
         </div>

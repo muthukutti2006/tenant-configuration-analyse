@@ -1,245 +1,244 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
+import { SectionHeader } from "../components/ui/Shared";
+import { CheckCircle2, Circle, BookOpen } from "lucide-react";
+
+const COMPLETED = [
+  "Configuration parser (JSON input, edge case handling)",
+  "Configuration validator (type/range checks)",
+  "Rule normalizer (canonical key-value pairs)",
+  "Conflict detection engine (5 conflict categories, 10 rules)",
+  "Severity classifier (CRITICAL/HIGH/MEDIUM/LOW policy)",
+  "Evidence generator (field-level structured evidence)",
+  "FastAPI backend with 19 REST endpoints",
+  "React + TypeScript + Tailwind v4 frontend dashboard",
+  "8 realistic test tenant configurations",
+  "93 automated pytest tests (43 original + 50 drift tests)",
+  "Versioned Baseline Store (3 tenants, 4 baselines)",
+  "Configuration Drift Detection engine",
+  "Machine-readable Rule Catalogue (18 rules)",
+  "Synthetic before/after validation experiment",
+  "Architecture + testing + drift documentation",
+  "CI/CD pipeline (GitHub Actions)",
+];
+
+const FUTURE = [
+  "Complete audit trail with immutable event log",
+  "Change approval workflow (propose → review → approve/reject)",
+  "Rollback path for high-impact configuration changes",
+  "False-positive / false-negative experiment with labeled data",
+  "Stakeholder validation study",
+  "Full performance benchmarking (large tenant sets)",
+  "Production deployment (containerisation)",
+  "ML/Anomaly detection parallel experimental channel",
+  "Measurable defect-reduction experiment across upgrade cycles",
+];
+
+const ENDPOINTS = [
+  { method: "GET",  path: "/api/health", description: "Service health check" },
+  { method: "POST", path: "/api/analyze", description: "Analyse a single tenant configuration" },
+  { method: "GET",  path: "/api/analyze-all", description: "Analyse all bundled test configurations" },
+  { method: "GET",  path: "/api/configurations", description: "List all test tenant configurations" },
+  { method: "GET",  path: "/api/configurations/{id}", description: "Get a specific tenant configuration" },
+  { method: "GET",  path: "/api/conflicts", description: "List all conflicts across all tenants" },
+  { method: "GET",  path: "/api/conflicts/{id}", description: "Get a specific conflict with evidence" },
+  { method: "GET",  path: "/api/rules", description: "List all documented detection rules" },
+  { method: "GET",  path: "/api/baselines", description: "List all baseline records" },
+  { method: "GET",  path: "/api/baselines/{tenant_id}", description: "Get baselines for a tenant" },
+  { method: "GET",  path: "/api/baselines/{tenant_id}/{version}", description: "Get specific baseline version" },
+  { method: "POST", path: "/api/baselines/{tenant_id}/{version}/compare", description: "Compare config against baseline" },
+  { method: "GET",  path: "/api/baselines/{tenant_id}/versions/compare", description: "Compare two baseline versions" },
+  { method: "POST", path: "/api/drift", description: "Detect drift between two raw configurations" },
+  { method: "GET",  path: "/api/catalog", description: "Get machine-readable rule catalogue" },
+  { method: "GET",  path: "/api/experiment", description: "Get synthetic validation experiment results" },
+];
+
+const METHOD_STYLE: Record<string, React.CSSProperties> = {
+  GET:  { background: "rgba(34,197,94,0.12)",  color: "var(--green)",     border: "1px solid rgba(34,197,94,0.25)" },
+  POST: { background: "rgba(99,102,241,0.12)", color: "var(--accent)",    border: "1px solid rgba(99,102,241,0.25)" },
+};
 
 export function AboutPage() {
-  const completedItems = [
-    "Configuration parser (JSON input, edge case handling)",
-    "Configuration validator (type/range checks)",
-    "Rule normalizer (canonical key-value pairs)",
-    "Conflict detection engine (5 conflict categories, 10 rules)",
-    "Severity classifier (documented CRITICAL/HIGH/MEDIUM/LOW policy)",
-    "Evidence generator (field-level structured evidence for HIGH/CRITICAL)",
-    "FastAPI backend with 7 REST endpoints",
-    "React + TypeScript + Tailwind frontend dashboard",
-    "8 realistic test tenant configurations",
-    "35+ automated pytest tests",
-    "6 edge/failure cases tested",
-    "Architecture documentation",
-    "Technical approach comparison (Rule-Based vs ML/Anomaly)",
-    "User flow documentation",
-    "Conflict rules documentation",
-  ];
-
-  const futureItems = [
-    "Complete audit trail with immutable event log",
-    "Change approval workflow (propose → review → approve/reject)",
-    "Rollback path for high-impact configuration changes",
-    "Upgrade history analysis",
-    "False-positive / false-negative experiment with labeled data",
-    "Stakeholder validation study",
-    "Full performance benchmarking (large tenant sets)",
-    "Deployment checklist",
-    "Production deployment (containerisation, CI/CD)",
-    "ML/Anomaly detection parallel module (future experimental channel)",
-    "Measurable defect-reduction experiment across upgrade cycles",
-  ];
-
-  const endpoints = [
-    { method: "GET", path: "/api/health", description: "Service health check" },
-    { method: "POST", path: "/api/analyze", description: "Analyse a single tenant configuration" },
-    { method: "GET", path: "/api/analyze-all", description: "Analyse all bundled test configurations" },
-    { method: "GET", path: "/api/configurations", description: "List all test tenant configurations" },
-    { method: "GET", path: "/api/configurations/{id}", description: "Get a specific tenant configuration" },
-    { method: "GET", path: "/api/conflicts", description: "List all conflicts across all tenants" },
-    { method: "GET", path: "/api/conflicts/{id}", description: "Get a specific conflict with evidence" },
-    { method: "GET", path: "/api/rules", description: "List all documented detection rules" },
-  ];
-
-  const methodColor: Record<string, string> = {
-    GET: "bg-green-100 text-green-700",
-    POST: "bg-blue-100 text-blue-700",
-  };
-
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Documentation & About</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Review-1 Prototype — Tenant-Configuration Analyser
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+      <SectionHeader
+        title="Documentation"
+        subtitle="CONFIQRA — Tenant Configuration Intelligence & Conflict Analysis Platform"
+        badge="Review-2"
+      />
+
+      {/* Project overview */}
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderLeft: "3px solid var(--accent)",
+          borderRadius: "10px",
+          padding: "18px 20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}
+      >
+        <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>Project Overview</div>
+        <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.7 }}>
+          <strong style={{ color: "var(--text-primary)" }}>CONFIQRA</strong> detects conflicting rules in tenant-specific configuration files for a University Student-Services Portal before deployment. It supports four portal modules: Admissions, Fees, Attendance, and Certificates.
         </p>
+        <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.7 }}>
+          Different university tenants can independently configure each module. Without automated checking, conflicting rules can cause incorrect business behavior, failed student-service workflows, and difficult software upgrades.
+        </p>
+        <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.7 }}>
+          This system uses <strong style={{ color: "var(--text-primary)" }}>Rule-Based Conflict Detection</strong> to provide deterministic, explainable, auditable results with field-level evidence for every HIGH or CRITICAL conflict.
+        </p>
+        <div
+          style={{
+            padding: "10px 14px",
+            background: "var(--bg-surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: "6px",
+            fontSize: "12px",
+            color: "var(--text-muted)",
+            fontStyle: "italic",
+          }}
+        >
+          "Detect configuration conflicts before they become deployment problems."
+        </div>
       </div>
 
-      {/* Project Description */}
-      <Card>
-        <CardHeader><CardTitle>Project Overview</CardTitle></CardHeader>
-        <CardContent className="text-sm text-slate-700 space-y-3">
-          <p>
-            The <strong>Tenant-Configuration Analyser</strong> detects conflicting rules in tenant-specific
-            configuration files for a University Student-Services Portal before deployment. It supports
-            four portal modules: Admissions, Fees, Attendance, and Certificates.
-          </p>
-          <p>
-            Different university tenants can independently configure each module. Without automated checking,
-            conflicting rules can cause incorrect business behavior, failed student-service workflows,
-            and difficult software upgrades.
-          </p>
-          <p>
-            This system uses <strong>Rule-Based Conflict Detection</strong> to provide deterministic,
-            explainable, auditable results with field-level evidence for every HIGH or CRITICAL conflict.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Architecture */}
-      <Card>
-        <CardHeader><CardTitle>System Architecture</CardTitle></CardHeader>
-        <CardContent className="text-sm text-slate-700 space-y-3">
-          <pre className="bg-slate-50 rounded p-4 text-xs font-mono text-slate-700 overflow-auto">{`User
- ↓
-React Dashboard (Vite + TypeScript + Tailwind)
- ↓ HTTP POST /api/analyze
-FastAPI Application (Python)
- ↓
-Configuration Parser          — parse JSON, handle edge cases
- ↓
-Configuration Validator       — field types, ranges, required fields
- ↓
-Rule Normalizer               — flatten to canonical (path, value) pairs
- ↓
-Conflict Detection Engine     — 5 detector functions, 10 rules
- ↓
-Severity Classifier           — CRITICAL / HIGH / MEDIUM / LOW
- ↓
-Evidence Generator            — structured field-level evidence
- ↓
-Analysis Result (JSON)
- ↓
-Dashboard (conflicts, evidence, charts)`}</pre>
-
-          <div className="mt-3 space-y-1">
-            <p><strong>Future extension points (designed but not built):</strong></p>
-            <ul className="list-disc list-inside space-y-1 text-slate-600">
-              <li>Audit Trail Module — append-only event log per tenant action</li>
-              <li>Change Approval Workflow — propose/review/approve pipeline</li>
-              <li>Rollback Module — store/restore prior approved configurations</li>
-              <li>ML Anomaly Detection Channel — parallel experimental engine</li>
-            </ul>
+      {/* Status: completed vs future */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+          <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", fontSize: "13px", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <CheckCircle2 size={14} style={{ color: "var(--green)" }} /> Completed (Review-2)
           </div>
-        </CardContent>
-      </Card>
+          <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "7px" }}>
+            {COMPLETED.map((item) => (
+              <div key={item} style={{ display: "flex", gap: "8px", fontSize: "12px", color: "var(--text-secondary)", alignItems: "flex-start" }}>
+                <CheckCircle2 size={11} style={{ color: "var(--green)", flexShrink: 0, marginTop: "2px" }} />
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
 
-      {/* Review-1 Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle>✓ Completed (Review-1)</CardTitle></CardHeader>
-          <CardContent>
-            <ul className="space-y-1.5">
-              {completedItems.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-slate-700">
-                  <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>○ Future Work</CardTitle></CardHeader>
-          <CardContent>
-            <ul className="space-y-1.5">
-              {futureItems.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-slate-500">
-                  <span className="text-slate-300 mt-0.5 flex-shrink-0">○</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+          <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", fontSize: "13px", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Circle size={14} style={{ color: "var(--text-muted)" }} /> Future Work
+          </div>
+          <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "7px" }}>
+            {FUTURE.map((item) => (
+              <div key={item} style={{ display: "flex", gap: "8px", fontSize: "12px", color: "var(--text-muted)", alignItems: "flex-start" }}>
+                <Circle size={11} style={{ flexShrink: 0, marginTop: "2px" }} />
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* API Endpoints */}
-      <Card>
-        <CardHeader><CardTitle>API Endpoints</CardTitle></CardHeader>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
+      {/* API endpoints */}
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+          API Endpoints ({ENDPOINTS.length})
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-4 py-2 text-xs font-medium text-slate-500 uppercase">Method</th>
-                <th className="text-left px-4 py-2 text-xs font-medium text-slate-500 uppercase">Path</th>
-                <th className="text-left px-4 py-2 text-xs font-medium text-slate-500 uppercase">Description</th>
+              <tr style={{ background: "var(--bg-surface-2)", borderBottom: "1px solid var(--border)" }}>
+                {["Method", "Path", "Description"].map((h) => (
+                  <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {endpoints.map((e) => (
-                <tr key={e.path} className="border-b border-slate-50 last:border-0">
-                  <td className="px-4 py-2.5">
-                    <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold ${methodColor[e.method]}`}>
+              {ENDPOINTS.map((e) => (
+                <tr key={e.path} style={{ borderBottom: "1px solid var(--border)" }}
+                  onMouseEnter={(el) => (el.currentTarget.style.background = "var(--bg-surface-2)")}
+                  onMouseLeave={(el) => (el.currentTarget.style.background = "transparent")}
+                >
+                  <td style={{ padding: "9px 16px" }}>
+                    <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", fontFamily: "monospace", fontWeight: 700, ...(METHOD_STYLE[e.method] ?? {}) }}>
                       {e.method}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-indigo-700">{e.path}</td>
-                  <td className="px-4 py-2.5 text-slate-600">{e.description}</td>
+                  <td style={{ padding: "9px 16px" }}>
+                    <code style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--accent)" }}>{e.path}</code>
+                  </td>
+                  <td style={{ padding: "9px 16px", fontSize: "12px", color: "var(--text-secondary)" }}>{e.description}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* How to run */}
-      <Card>
-        <CardHeader><CardTitle>How to Run Locally</CardTitle></CardHeader>
-        <CardContent className="text-sm text-slate-700 space-y-4">
-          <div>
-            <p className="font-semibold mb-1">Backend</p>
-            <pre className="bg-slate-50 rounded p-3 text-xs font-mono text-slate-700">{`cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000`}</pre>
-          </div>
-          <div>
-            <p className="font-semibold mb-1">Frontend</p>
-            <pre className="bg-slate-50 rounded p-3 text-xs font-mono text-slate-700">{`cd frontend
-npm install
-npm run dev`}</pre>
-          </div>
-          <div>
-            <p className="font-semibold mb-1">Tests</p>
-            <pre className="bg-slate-50 rounded p-3 text-xs font-mono text-slate-700">{`cd backend
-pytest tests/ -v`}</pre>
-          </div>
-          <p className="text-xs text-slate-500">
-            Frontend runs at <code>http://localhost:5173</code>. Backend runs at <code>http://localhost:8000</code>.
-            API docs available at <code>http://localhost:8000/docs</code>.
-          </p>
-        </CardContent>
-      </Card>
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+          How to Run Locally
+        </div>
+        <div style={{ padding: "18px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
+          {[
+            { label: "Backend", code: "cd backend\npip install -r requirements.txt\nuvicorn main:app --reload --port 8000" },
+            { label: "Frontend", code: "cd frontend\nnpm install\nnpm run dev" },
+            { label: "Tests", code: "cd backend\npytest tests/ -v\n\n# 93 tests should pass" },
+          ].map(({ label, code }) => (
+            <div key={label}>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+              <pre
+                style={{
+                  fontSize: "11px",
+                  fontFamily: "monospace",
+                  color: "var(--text-secondary)",
+                  background: "var(--bg-surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  padding: "12px",
+                  margin: 0,
+                  overflowX: "auto",
+                }}
+              >
+                {code}
+              </pre>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: "12px 18px", borderTop: "1px solid var(--border)", fontSize: "11px", color: "var(--text-muted)" }}>
+          Frontend: <code style={{ fontFamily: "monospace", color: "var(--accent)" }}>http://localhost:5173</code> · Backend: <code style={{ fontFamily: "monospace", color: "var(--accent)" }}>http://localhost:8000</code> · Swagger: <code style={{ fontFamily: "monospace", color: "var(--accent)" }}>http://localhost:8000/docs</code>
+        </div>
+      </div>
 
-      {/* Baseline */}
-      <Card>
-        <CardHeader><CardTitle>Baseline Comparison</CardTitle></CardHeader>
-        <CardContent className="text-sm text-slate-700 space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="border border-slate-200 rounded p-3 bg-slate-50">
-              <p className="font-semibold text-slate-800 mb-2">Baseline: Manual Inspection</p>
-              <ol className="space-y-1 text-slate-600">
-                <li>1. Receive configuration file</li>
-                <li>2. Manually read each field</li>
-                <li>3. Mentally check against known rules</li>
-                <li>4. Write conflict notes</li>
-                <li>5. Share notes with team</li>
-              </ol>
-              <p className="mt-2 text-xs text-slate-500">Time: 30–60 min per tenant · Error-prone · Not auditable</p>
-            </div>
-            <div className="border border-indigo-200 rounded p-3 bg-indigo-50">
-              <p className="font-semibold text-indigo-800 mb-2">Proposed: Automated Analyser</p>
-              <ol className="space-y-1 text-slate-700">
-                <li>1. Submit configuration via UI or API</li>
-                <li>2. Parser validates structure</li>
-                <li>3. Engine runs 10 detection rules</li>
-                <li>4. Results returned with evidence</li>
-                <li>5. Dashboard shows results instantly</li>
-              </ol>
-              <p className="mt-2 text-xs text-indigo-600">Time: &lt;1 second · Deterministic · Full evidence trail</p>
+      {/* Before / After comparison */}
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+          Manual vs Automated Analysis
+        </div>
+        <div style={{ padding: "18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+          <div style={{ padding: "14px", background: "var(--bg-surface-2)", border: "1px solid var(--border)", borderRadius: "8px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "10px" }}>Baseline: Manual Inspection</div>
+            {["Receive configuration file", "Manually read each field", "Mentally check against known rules", "Write conflict notes", "Share notes with team"].map((s, i) => (
+              <div key={i} style={{ display: "flex", gap: "8px", fontSize: "12px", color: "var(--text-muted)", marginBottom: "5px" }}>
+                <span style={{ flexShrink: 0 }}>{i + 1}.</span>{s}
+              </div>
+            ))}
+            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>
+              Time: 30–60 min per tenant · Error-prone · Not auditable
             </div>
           </div>
-          <p className="text-xs text-slate-500">
-            <strong>Note:</strong> A measurable defect-reduction experiment comparing baseline vs automated
-            detection across upgrade cycles is planned for a future review phase.
-          </p>
-        </CardContent>
-      </Card>
+          <div style={{ padding: "14px", background: "var(--accent-light)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "8px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>Automated: CONFIQRA</div>
+            {["Submit configuration via UI or API", "Parser validates structure", "Engine runs detection rules", "Results returned with evidence", "Dashboard shows results instantly"].map((s, i) => (
+              <div key={i} style={{ display: "flex", gap: "8px", fontSize: "12px", color: "var(--text-secondary)", marginBottom: "5px" }}>
+                <span style={{ color: "var(--accent)", flexShrink: 0 }}>{i + 1}.</span>{s}
+              </div>
+            ))}
+            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--accent)", fontStyle: "italic" }}>
+              Time: &lt;1 second · Deterministic · Full evidence trail
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

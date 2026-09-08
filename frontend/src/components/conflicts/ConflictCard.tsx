@@ -1,9 +1,8 @@
 import React from "react";
 import type { Conflict } from "../../types";
 import { SeverityBadge, ConflictTypeBadge } from "../ui/Badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
-import { ChevronDown, ChevronUp, ShieldAlert } from "lucide-react";
-import { conflictTypeLabel } from "../../lib/utils";
+import { ChevronDown, ChevronRight, ShieldAlert } from "lucide-react";
+import { severityAccent } from "../../lib/utils";
 
 interface ConflictCardProps {
   conflict: Conflict;
@@ -13,100 +12,194 @@ interface ConflictCardProps {
 export function ConflictCard({ conflict, defaultExpanded = false }: ConflictCardProps) {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
   const hasEvidence = !!conflict.evidence;
+  const accent = severityAccent(conflict.severity);
 
   return (
-    <Card className="overflow-hidden">
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        borderLeft: `3px solid ${accent}`,
+        borderRadius: "8px",
+        overflow: "hidden",
+        transition: "box-shadow 150ms",
+      }}
+    >
+      {/* Header row — clickable */}
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="w-full text-left"
         aria-expanded={expanded}
+        style={{
+          width: "100%",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "14px 16px",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "12px",
+          textAlign: "left",
+        }}
       >
-        <CardHeader className="flex flex-row items-start justify-between gap-4 cursor-pointer hover:bg-slate-50 transition-colors">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <SeverityBadge severity={conflict.severity} />
-              <ConflictTypeBadge type={conflict.conflict_type} />
+        {/* Expand icon */}
+        <span style={{ color: "var(--text-muted)", marginTop: "2px", flexShrink: 0 }}>
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </span>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "6px" }}>
+            <SeverityBadge severity={conflict.severity} />
+            <ConflictTypeBadge type={conflict.conflict_type} />
+          </div>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.4 }}>
+            {conflict.title}
+          </div>
+          {conflict.tenant_name && (
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "3px" }}>
+              {conflict.tenant_name} · <span style={{ fontFamily: "monospace" }}>{conflict.tenant_id}</span>
             </div>
-            <CardTitle className="text-sm font-semibold text-slate-900 leading-snug">
-              {conflict.title}
-            </CardTitle>
-            {conflict.tenant_name && (
-              <p className="text-xs text-slate-500 mt-0.5">{conflict.tenant_name} · {conflict.tenant_id}</p>
-            )}
-          </div>
-          <div className="flex-shrink-0 text-slate-400 mt-1">
-            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </div>
-        </CardHeader>
+          )}
+        </div>
       </button>
 
+      {/* Expanded detail */}
       {expanded && (
-        <CardContent className="space-y-4 border-t border-slate-100">
+        <div
+          style={{
+            borderTop: "1px solid var(--border)",
+            padding: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+          }}
+        >
           {/* Description */}
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Description</p>
-            <p className="text-sm text-slate-700">{conflict.description}</p>
-          </div>
-
-          {/* Fields */}
-          <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Fields Involved</p>
-            <div className="flex flex-wrap gap-1">
-              {conflict.fields_involved.map((f) => (
-                <code key={f} className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
-                  {f}
-                </code>
-              ))}
+            <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>
+              Description
             </div>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+              {conflict.description}
+            </p>
           </div>
 
-          {/* Evidence Panel */}
+          {/* Fields involved */}
+          {conflict.fields_involved?.length > 0 && (
+            <div>
+              <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>
+                Fields Involved
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {conflict.fields_involved.map((f) => (
+                  <code
+                    key={f}
+                    style={{
+                      fontSize: "11px",
+                      padding: "2px 8px",
+                      background: "var(--bg-surface-3)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "4px",
+                      fontFamily: "monospace",
+                    }}
+                  >
+                    {f}
+                  </code>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Evidence panel */}
           {hasEvidence && conflict.evidence && (
-            <div className="rounded-md border border-indigo-200 bg-indigo-50 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <ShieldAlert size={15} className="text-indigo-600" />
-                <p className="text-xs font-semibold text-indigo-800 uppercase tracking-wide">
+            <div
+              style={{
+                borderRadius: "8px",
+                border: "1px solid rgba(99,102,241,0.25)",
+                background: "rgba(99,102,241,0.05)",
+                padding: "14px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              {/* Evidence header */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <ShieldAlert size={14} style={{ color: "var(--accent)" }} />
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                   Evidence
-                </p>
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Rule A */}
-                <div className="bg-white rounded border border-indigo-100 p-3">
-                  <p className="text-xs text-slate-500 mb-1">Rule A</p>
-                  <code className="text-xs font-mono text-slate-700 block">{conflict.evidence.rule_a}</code>
-                  <p className="text-sm font-semibold text-slate-900 mt-1">
+              {/* Rule pair */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    background: "var(--bg-surface-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px",
+                  }}
+                >
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px" }}>Rule A</div>
+                  <code style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--text-secondary)", display: "block" }}>
+                    {conflict.evidence.rule_a}
+                  </code>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginTop: "4px" }}>
                     {JSON.stringify(conflict.evidence.value_a)}
-                  </p>
+                  </div>
                 </div>
-
-                {/* Rule B */}
                 {conflict.evidence.rule_b && (
-                  <div className="bg-white rounded border border-indigo-100 p-3">
-                    <p className="text-xs text-slate-500 mb-1">Rule B</p>
-                    <code className="text-xs font-mono text-slate-700 block">{conflict.evidence.rule_b}</code>
-                    <p className="text-sm font-semibold text-slate-900 mt-1">
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      background: "var(--bg-surface-2)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px" }}>Rule B</div>
+                    <code style={{ fontSize: "11px", fontFamily: "monospace", color: "var(--text-secondary)", display: "block" }}>
+                      {conflict.evidence.rule_b}
+                    </code>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginTop: "4px" }}>
                       {JSON.stringify(conflict.evidence.value_b)}
-                    </p>
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Why */}
               <div>
-                <p className="text-xs font-medium text-indigo-700 mb-1">Why this is a conflict</p>
-                <p className="text-sm text-slate-700">{conflict.evidence.why_conflict}</p>
+                <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--accent)", marginBottom: "4px" }}>
+                  Why this is a conflict
+                </div>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+                  {conflict.evidence.why_conflict}
+                </p>
               </div>
 
               {/* Recommendation */}
-              <div className="bg-amber-50 border border-amber-200 rounded p-3">
-                <p className="text-xs font-semibold text-amber-700 mb-1">⚑ Recommended Action</p>
-                <p className="text-sm text-slate-700">{conflict.evidence.recommendation}</p>
+              <div
+                style={{
+                  padding: "10px 12px",
+                  background: "rgba(234,179,8,0.08)",
+                  border: "1px solid rgba(234,179,8,0.2)",
+                  borderRadius: "6px",
+                }}
+              >
+                <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--c-medium)", marginBottom: "4px" }}>
+                  ⚑ Recommended Action
+                </div>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+                  {conflict.evidence.recommendation}
+                </p>
               </div>
             </div>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

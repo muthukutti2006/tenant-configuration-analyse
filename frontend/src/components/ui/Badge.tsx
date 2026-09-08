@@ -1,73 +1,87 @@
 import React from "react";
 import { cn } from "../../lib/utils";
 import type { Severity } from "../../types";
-import { severityColor } from "../../lib/utils";
 
-interface BadgeProps {
-  severity: Severity;
-  className?: string;
-}
+/* ── SeverityBadge ─────────────────────────────────────────────── */
+const SEVERITY_STYLE: Record<string, React.CSSProperties> = {
+  CRITICAL: { background: "var(--c-critical-bg)", color: "var(--c-critical)", border: "1px solid rgba(239,68,68,0.3)" },
+  HIGH:     { background: "var(--c-high-bg)",     color: "var(--c-high)",     border: "1px solid rgba(249,115,22,0.3)" },
+  MEDIUM:   { background: "var(--c-medium-bg)",   color: "var(--c-medium)",   border: "1px solid rgba(234,179,8,0.3)" },
+  LOW:      { background: "var(--c-low-bg)",       color: "var(--c-low)",     border: "1px solid rgba(59,130,246,0.3)" },
+};
 
-export function SeverityBadge({ severity, className }: BadgeProps) {
+export function SeverityBadge({ severity, className }: { severity: Severity; className?: string }) {
   return (
     <span
-      className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border",
-        severityColor(severity),
-        className
-      )}
+      className={cn("inline-flex items-center rounded text-xs font-semibold", className)}
+      style={{ padding: "2px 7px", ...SEVERITY_STYLE[severity] }}
     >
       {severity}
     </span>
   );
 }
 
-interface ConflictTypeBadgeProps {
-  type: string;
-  className?: string;
-}
-
-export function ConflictTypeBadge({ type, className }: ConflictTypeBadgeProps) {
-  const label = type.replace(/_/g, " ");
+/* ── ConflictTypeBadge ────────────────────────────────────────────── */
+export function ConflictTypeBadge({ type, className }: { type: string; className?: string }) {
   return (
     <span
-      className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200",
-        className
-      )}
+      className={cn("inline-flex items-center rounded text-xs font-medium", className)}
+      style={{
+        padding: "2px 7px",
+        background: "var(--bg-surface-3)",
+        color: "var(--text-secondary)",
+        border: "1px solid var(--border)",
+      }}
     >
-      {label}
+      {type.replace(/_/g, " ")}
     </span>
   );
 }
 
-interface StatusBadgeProps {
-  status: string;
-  className?: string;
-}
+/* ── StatusBadge ──────────────────────────────────────────────────── */
+const STATUS_STYLE: Record<string, React.CSSProperties> = {
+  clean: {
+    background: "rgba(34,197,94,0.12)",
+    color: "#4ade80",
+    border: "1px solid rgba(34,197,94,0.25)",
+  },
+  conflicts_found: {
+    background: "var(--c-high-bg)",
+    color: "var(--c-high)",
+    border: "1px solid rgba(249,115,22,0.25)",
+  },
+  critical_conflicts_found: {
+    background: "var(--c-critical-bg)",
+    color: "var(--c-critical)",
+    border: "1px solid rgba(239,68,68,0.25)",
+  },
+  invalid_configuration: {
+    background: "var(--c-critical-bg)",
+    color: "var(--c-critical)",
+    border: "1px solid rgba(239,68,68,0.25)",
+  },
+};
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const colorMap: Record<string, string> = {
-    clean: "bg-green-100 text-green-800 border-green-200",
-    conflicts_found: "bg-orange-100 text-orange-800 border-orange-200",
-    critical_conflicts_found: "bg-red-100 text-red-800 border-red-200",
-    invalid_configuration: "bg-red-100 text-red-800 border-red-200",
-  };
-  const labelMap: Record<string, string> = {
-    clean: "✓ Clean",
-    conflicts_found: "Conflicts Found",
-    critical_conflicts_found: "Critical",
-    invalid_configuration: "Invalid",
-  };
+const STATUS_LABEL: Record<string, string> = {
+  clean: "✓ Clean",
+  conflicts_found: "Conflicts Found",
+  critical_conflicts_found: "Critical",
+  invalid_configuration: "Invalid",
+};
+
+export function StatusBadge({ status, className }: { status: string; className?: string }) {
   return (
     <span
-      className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border",
-        colorMap[status] ?? "bg-gray-100 text-gray-700",
-        className
-      )}
+      className={cn("inline-flex items-center rounded text-xs font-semibold", className)}
+      style={{
+        padding: "2px 7px",
+        ...(STATUS_STYLE[status] ?? {
+          background: "var(--bg-surface-3)",
+          color: "var(--text-secondary)",
+        }),
+      }}
     >
-      {labelMap[status] ?? status}
+      {STATUS_LABEL[status] ?? status}
     </span>
   );
 }

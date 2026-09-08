@@ -1,9 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { ConflictRule } from "../types";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
-import { SeverityBadge } from "../components/ui/Badge";
-import { ConflictTypeBadge } from "../components/ui/Badge";
+import type { ConflictRule, Severity } from "../types";
+import { SeverityBadge, ConflictTypeBadge } from "../components/ui/Badge";
+import { SectionHeader, ErrorState } from "../components/ui/Shared";
+import { MetricCard } from "../components/ui/MetricCard";
+import { FileText, Shield } from "lucide-react";
+
+const SEVERITY_POLICY = [
+  {
+    level: "CRITICAL" as Severity,
+    definition: "Configuration causes major incorrect business behavior or deployment failure.",
+    examples: ["fees module disabled but fee clearance required", "attendance disabled but attendance clearance required"],
+    accent: "var(--c-critical)",
+    bg: "rgba(239,68,68,0.07)",
+    border: "rgba(239,68,68,0.2)",
+  },
+  {
+    level: "HIGH" as Severity,
+    definition: "Conflicting rules affect important student-service decisions.",
+    examples: ["online payment disabled but required before admission", "attendance threshold mismatch affecting exam eligibility"],
+    accent: "var(--c-high)",
+    bg: "rgba(249,115,22,0.07)",
+    border: "rgba(249,115,22,0.2)",
+  },
+  {
+    level: "MEDIUM" as Severity,
+    definition: "Potential inconsistent behavior with limited operational impact.",
+    examples: ["grace period configured without late fee", "digital certificate flag vs signature requirement"],
+    accent: "var(--c-medium)",
+    bg: "rgba(234,179,8,0.07)",
+    border: "rgba(234,179,8,0.2)",
+  },
+  {
+    level: "LOW" as Severity,
+    definition: "Minor configuration inconsistency or advisory warning.",
+    examples: ["duplicate attendance threshold fields"],
+    accent: "var(--c-low)",
+    bg: "rgba(59,130,246,0.07)",
+    border: "rgba(59,130,246,0.2)",
+  },
+];
 
 export function RulesPage() {
   const [rules, setRules] = useState<ConflictRule[]>([]);
@@ -13,63 +49,49 @@ export function RulesPage() {
     api.listRules().then((d) => setRules(d.rules)).finally(() => setLoading(false));
   }, []);
 
-  const severityPolicy = [
-    {
-      level: "CRITICAL" as const,
-      definition: "Configuration causes major incorrect business behavior or deployment failure.",
-      examples: ["fees module disabled but fee clearance required", "attendance disabled but attendance clearance required"],
-    },
-    {
-      level: "HIGH" as const,
-      definition: "Conflicting rules affect important student-service decisions.",
-      examples: ["online payment disabled but required before admission", "attendance threshold mismatch affecting exam eligibility"],
-    },
-    {
-      level: "MEDIUM" as const,
-      definition: "Potential inconsistent behavior with limited operational impact.",
-      examples: ["grace period configured without late fee", "digital certificate flag vs signature requirement"],
-    },
-    {
-      level: "LOW" as const,
-      definition: "Minor configuration inconsistency or advisory warning.",
-      examples: ["duplicate attendance threshold fields"],
-    },
-  ];
-
-  const colorMap = {
-    CRITICAL: "border-red-200 bg-red-50",
-    HIGH: "border-orange-200 bg-orange-50",
-    MEDIUM: "border-yellow-200 bg-yellow-50",
-    LOW: "border-blue-200 bg-blue-50",
-  };
-
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Detection Rules</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          All conflict detection rules and the severity classification policy
-        </p>
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+      <SectionHeader
+        title="Detection Rules"
+        subtitle="All conflict detection rules and the deterministic severity classification policy."
+        badge={`${rules.length} rules`}
+      />
+
+      {/* Metric cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "12px" }}>
+        <MetricCard label="Detection Rules" value={rules.length} icon={FileText} accent="var(--accent)" />
+        <MetricCard label="Severity Levels" value={4} icon={Shield} accent="var(--c-critical)" />
       </div>
 
-      {/* Severity Policy */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-800">Severity Classification Policy</h2>
-        <p className="text-sm text-slate-600">
-          Severity is assigned deterministically based on documented rules — not arbitrary scores.
-          Every classification has a stated rationale.
+      {/* Severity classification policy */}
+      <section>
+        <h2 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "10px", marginTop: 0 }}>
+          Severity Classification Policy
+        </h2>
+        <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "14px", lineHeight: 1.6 }}>
+          Severity is assigned deterministically based on documented rules — not arbitrary scores. Every classification has a stated rationale.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {severityPolicy.map((p) => (
-            <div key={p.level} className={`rounded-lg border p-4 ${colorMap[p.level]}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <SeverityBadge severity={p.level} />
-              </div>
-              <p className="text-sm text-slate-700 mb-2">{p.definition}</p>
-              <ul className="space-y-1">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "12px" }}>
+          {SEVERITY_POLICY.map((p) => (
+            <div
+              key={p.level}
+              style={{
+                padding: "14px 16px",
+                background: p.bg,
+                border: `1px solid ${p.border}`,
+                borderLeft: `3px solid ${p.accent}`,
+                borderRadius: "8px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <SeverityBadge severity={p.level} />
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>{p.definition}</p>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
                 {p.examples.map((ex) => (
-                  <li key={ex} className="text-xs text-slate-600 flex items-start gap-1">
-                    <span className="text-slate-400 mt-0.5">•</span>
+                  <li key={ex} style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", gap: "6px", alignItems: "flex-start" }}>
+                    <span style={{ color: p.accent, flexShrink: 0 }}>•</span>
                     {ex}
                   </li>
                 ))}
@@ -79,45 +101,77 @@ export function RulesPage() {
         </div>
       </section>
 
-      {/* Rules Table */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-800">Conflict Detection Rules</h2>
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <p className="px-4 py-3 text-sm text-slate-400 animate-pulse">Loading…</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase">ID</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase">Name</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase">Type</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase">Description</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase">Severity</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rules.map((r) => (
-                      <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="px-4 py-3 font-mono text-xs text-slate-500">{r.id}</td>
-                        <td className="px-4 py-3 font-medium text-slate-900">{r.name}</td>
-                        <td className="px-4 py-3">
-                          <ConflictTypeBadge type={r.type} />
-                        </td>
-                        <td className="px-4 py-3 text-slate-600 text-xs">{r.description}</td>
-                        <td className="px-4 py-3">
-                          <SeverityBadge severity={r.default_severity} />
-                        </td>
-                      </tr>
+      {/* Rules table */}
+      <section>
+        <h2 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "12px", marginTop: 0 }}>
+          Conflict Detection Rules
+        </h2>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "10px",
+            overflow: "hidden",
+          }}
+        >
+          {loading ? (
+            <div style={{ padding: "16px" }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="skeleton" style={{ height: "40px", borderRadius: "5px", marginBottom: "6px" }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "var(--bg-surface-2)", borderBottom: "1px solid var(--border)" }}>
+                    {["ID", "Name", "Type", "Description", "Severity"].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "10px 14px",
+                          textAlign: "left",
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          color: "var(--text-muted)",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rules.map((r) => (
+                    <tr
+                      key={r.id}
+                      style={{ borderBottom: "1px solid var(--border)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-2)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <td style={{ padding: "10px 14px" }}>
+                        <code style={{ fontSize: "10px", fontFamily: "monospace", color: "var(--text-muted)" }}>{r.id}</code>
+                      </td>
+                      <td style={{ padding: "10px 14px", fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+                        {r.name}
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <ConflictTypeBadge type={r.type} />
+                      </td>
+                      <td style={{ padding: "10px 14px", fontSize: "12px", color: "var(--text-secondary)" }}>{r.description}</td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <SeverityBadge severity={r.default_severity} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

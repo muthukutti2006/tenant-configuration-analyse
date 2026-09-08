@@ -1,17 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
 import { Sidebar } from "./Sidebar";
+import { TopNav } from "./TopNav";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-6 py-6">{children}</div>
-      </main>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: "var(--bg-base)",
+      }}
+    >
+      <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen((o) => !o)} />
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          overflow: "hidden",
+        }}
+      >
+        <TopNav onMenuToggle={() => setSidebarOpen((o) => !o)} />
+        <main
+          style={{
+            flex: 1,
+            overflow: "auto",
+            padding: "24px",
+          }}
+        >
+          <div style={{ maxWidth: "1400px", margin: "0 auto" }}>{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

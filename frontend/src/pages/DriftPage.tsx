@@ -1,79 +1,149 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
 import type { BaselineRecord, DriftReport, DriftFinding, DriftSeverity, DriftType } from "../types";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
-import { RefreshCw, GitCompare, ChevronDown, ChevronRight, AlertCircle, Upload } from "lucide-react";
+import { SectionHeader, ErrorState, EmptyState, SearchInput, SelectFilter } from "../components/ui/Shared";
+import { MetricCard } from "../components/ui/MetricCard";
+import { driftTypeStyle, severityAccent } from "../lib/utils";
+import {
+  GitBranch, ChevronDown, ChevronRight, AlertTriangle,
+  GitCompare, RefreshCw, Activity,
+} from "lucide-react";
 
-// ─── Severity colours ─────────────────────────────────────────────────────────
-
-const SEVERITY_BG: Record<DriftSeverity, string> = {
-  CRITICAL: "bg-red-100 text-red-700 border-red-200",
-  HIGH:     "bg-orange-100 text-orange-700 border-orange-200",
-  MEDIUM:   "bg-yellow-100 text-yellow-700 border-yellow-200",
-  LOW:      "bg-blue-100 text-blue-700 border-blue-200",
-};
-
-const DRIFT_TYPE_LABEL: Record<DriftType, string> = {
-  ADDED:     "ADDED",
-  REMOVED:   "REMOVED",
-  CHANGED:   "CHANGED",
-  UNCHANGED: "UNCHANGED",
-};
-
-const DRIFT_TYPE_COLOR: Record<DriftType, string> = {
-  ADDED:     "bg-green-100 text-green-700",
-  REMOVED:   "bg-red-100 text-red-700",
-  CHANGED:   "bg-amber-100 text-amber-700",
-  UNCHANGED: "bg-slate-100 text-slate-500",
-};
-
-// ─── DriftFindingRow ─────────────────────────────────────────────────────────
-
-function DriftFindingRow({ finding }: { finding: DriftFinding }) {
-  const [expanded, setExpanded] = useState(
-    finding.severity === "CRITICAL" || finding.severity === "HIGH"
+/* ── Severity badge ─────────────────────────────────────────────── */
+function SevBadge({ s }: { s: DriftSeverity }) {
+  const styleMap: Record<DriftSeverity, React.CSSProperties> = {
+    CRITICAL: { background: "var(--c-critical-bg)", color: "var(--c-critical)", border: "1px solid rgba(239,68,68,0.3)" },
+    HIGH:     { background: "var(--c-high-bg)",     color: "var(--c-high)",     border: "1px solid rgba(249,115,22,0.3)" },
+    MEDIUM:   { background: "var(--c-medium-bg)",   color: "var(--c-medium)",   border: "1px solid rgba(234,179,8,0.3)" },
+    LOW:      { background: "var(--c-low-bg)",       color: "var(--c-low)",     border: "1px solid rgba(59,130,246,0.3)" },
+  };
+  return (
+    <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", fontFamily: "monospace", ...styleMap[s] }}>
+      {s}
+    </span>
   );
+}
+
+/* ── Drift type chip ────────────────────────────────────────────── */
+function DriftChip({ type }: { type: DriftType }) {
+  const labels: Record<DriftType, string> = {
+    ADDED: "+ ADDED", REMOVED: "− REMOVED", CHANGED: "~ CHANGED", UNCHANGED: "= UNCHANGED",
+  };
+  return (
+    <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 6px", borderRadius: "4px", fontFamily: "monospace", ...driftTypeStyle(type) }}>
+      {labels[type]}
+    </span>
+  );
+}
+
+/* ── Single drift finding row ───────────────────────────────────── */
+function FindingRow({ f }: { f: DriftFinding }) {
+  const [open, setOpen] = useState(f.severity === "CRITICAL" || f.severity === "HIGH");
+  const leftBorder = severityAccent(f.severity);
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${finding.severity === "CRITICAL" ? "border-red-200" : "border-slate-200"}`}>
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        borderLeft: `3px solid ${leftBorder}`,
+        borderRadius: "7px",
+        overflow: "hidden",
+      }}
+    >
+      {/* Row header */}
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-slate-50 text-left transition-colors"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "11px 14px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          textAlign: "left",
+        }}
       >
-        {expanded ? <ChevronDown size={14} className="text-slate-400 flex-shrink-0" /> : <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />}
-        <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold border ${SEVERITY_BG[finding.severity]}`}>
-          {finding.severity}
+        <span style={{ color: "var(--text-muted)", flexShrink: 0 }}>
+          {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </span>
-        <span className={`text-xs px-2 py-0.5 rounded font-mono ${DRIFT_TYPE_COLOR[finding.drift_type]}`}>
-          {DRIFT_TYPE_LABEL[finding.drift_type]}
-        </span>
-        <code className="text-xs text-slate-700 font-mono flex-1 truncate">{finding.field}</code>
-        {finding.drift_type === "CHANGED" && (
-          <span className="text-xs text-slate-500 flex-shrink-0">
-            {String(finding.old_value)} → {String(finding.new_value)}
+        <SevBadge s={f.severity} />
+        <DriftChip type={f.drift_type} />
+        <code style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-primary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {f.field}
+        </code>
+        {/* Value preview */}
+        {f.drift_type === "CHANGED" && (
+          <span style={{ fontSize: "11px", color: "var(--text-muted)", flexShrink: 0, fontFamily: "monospace" }}>
+            <span style={{ color: "var(--c-critical)", textDecoration: "line-through" }}>{String(f.old_value)}</span>
+            {" → "}
+            <span style={{ color: "var(--green)" }}>{String(f.new_value)}</span>
           </span>
         )}
-        {finding.drift_type === "ADDED" && (
-          <span className="text-xs text-green-600 flex-shrink-0">= {String(finding.new_value)}</span>
+        {f.drift_type === "ADDED" && (
+          <span style={{ fontSize: "11px", color: "var(--green)", flexShrink: 0, fontFamily: "monospace" }}>
+            = {String(f.new_value)}
+          </span>
         )}
-        {finding.drift_type === "REMOVED" && (
-          <span className="text-xs text-red-600 flex-shrink-0 line-through">{String(finding.old_value)}</span>
+        {f.drift_type === "REMOVED" && (
+          <span style={{ fontSize: "11px", color: "var(--c-critical)", textDecoration: "line-through", flexShrink: 0, fontFamily: "monospace" }}>
+            {String(f.old_value)}
+          </span>
         )}
       </button>
 
-      {expanded && (
-        <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 space-y-2 text-sm">
-          <div>
-            <span className="font-medium text-slate-600">Reason: </span>
-            <span className="text-slate-700">{finding.evidence.reason}</span>
-          </div>
-          <div>
-            <span className="font-medium text-slate-600">Impact: </span>
-            <span className="text-slate-700">{finding.evidence.impact}</span>
-          </div>
-          <div className="bg-amber-50 border border-amber-100 rounded p-2">
-            <span className="font-medium text-amber-700">Recommendation: </span>
-            <span className="text-amber-800">{finding.evidence.recommendation}</span>
+      {/* Evidence panel */}
+      {open && (
+        <div
+          style={{
+            borderTop: "1px solid var(--border)",
+            padding: "14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            background: "var(--bg-surface-2)",
+          }}
+        >
+          {/* Git-style diff */}
+          {f.drift_type !== "UNCHANGED" && (
+            <div
+              style={{
+                borderRadius: "6px",
+                overflow: "hidden",
+                border: "1px solid var(--border)",
+                fontFamily: "monospace",
+                fontSize: "12px",
+              }}
+            >
+              {(f.drift_type === "CHANGED" || f.drift_type === "REMOVED") && (
+                <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.08)", color: "var(--c-critical)", borderBottom: "1px solid var(--border)" }}>
+                  − {f.field}: {String(f.old_value)}
+                </div>
+              )}
+              {(f.drift_type === "CHANGED" || f.drift_type === "ADDED") && (
+                <div style={{ padding: "8px 12px", background: "rgba(34,197,94,0.08)", color: "var(--green)" }}>
+                  + {f.field}: {String(f.new_value)}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Evidence details */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div>
+              <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Reason</span>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>{f.evidence.reason}</p>
+            </div>
+            <div>
+              <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Impact</span>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>{f.evidence.impact}</p>
+            </div>
+            <div style={{ padding: "8px 12px", background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)", borderRadius: "6px" }}>
+              <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--c-medium)", textTransform: "uppercase", letterSpacing: "0.06em" }}>⚑ Recommendation</span>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>{f.evidence.recommendation}</p>
+            </div>
           </div>
         </div>
       )}
@@ -81,434 +151,466 @@ function DriftFindingRow({ finding }: { finding: DriftFinding }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+/* ── Drift report view ──────────────────────────────────────────── */
+function DriftReportView({ report, onClear }: { report: DriftReport; onClear: () => void }) {
+  const [filterSeverity, setFilterSeverity] = useState("ALL");
+  const [filterType, setFilterType] = useState("ALL");
+  const [search, setSearch] = useState("");
 
-type Mode = "version" | "custom";
-type FilterSeverity = DriftSeverity | "ALL";
-type FilterType = DriftType | "ALL";
+  const findings = report.findings.filter((f) => {
+    if (filterSeverity !== "ALL" && f.severity !== filterSeverity) return false;
+    if (filterType !== "ALL" && f.drift_type !== filterType) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!f.field.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
+  const actionable = report.findings.filter((f) => f.drift_type !== "UNCHANGED");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Version comparison header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "16px 20px",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "10px",
+        }}
+      >
+        <div style={{ textAlign: "center", flex: 1 }}>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Baseline</div>
+          <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{report.tenant_id}</div>
+          <div
+            style={{
+              fontSize: "12px",
+              fontFamily: "monospace",
+              color: "var(--accent)",
+              marginTop: "2px",
+              padding: "2px 8px",
+              background: "var(--accent-light)",
+              borderRadius: "4px",
+              display: "inline-block",
+            }}
+          >
+            {report.baseline_version}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "var(--text-muted)" }}>
+          <div style={{ height: "24px", width: "1px", background: "var(--border)" }} />
+          <GitCompare size={16} />
+          <div style={{ height: "24px", width: "1px", background: "var(--border)" }} />
+        </div>
+
+        <div style={{ textAlign: "center", flex: 1 }}>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Candidate</div>
+          <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{report.tenant_name}</div>
+          <div
+            style={{
+              fontSize: "12px",
+              fontFamily: "monospace",
+              color: "var(--green)",
+              marginTop: "2px",
+              padding: "2px 8px",
+              background: "var(--green-light)",
+              borderRadius: "4px",
+              display: "inline-block",
+            }}
+          >
+            {report.candidate_version}
+          </div>
+        </div>
+
+        <button
+          onClick={onClear}
+          style={{
+            marginLeft: "auto",
+            background: "var(--bg-surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: "6px",
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+            padding: "6px 10px",
+            fontSize: "12px",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <RefreshCw size={12} /> New
+        </button>
+      </div>
+
+      {/* Summary metrics */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px" }}>
+        <MetricCard label="Total Findings" value={report.summary.total_findings} icon={Activity} accent="var(--accent)" />
+        <MetricCard label="Changed Fields" value={report.summary.changed} icon={GitCompare} accent="var(--c-medium)" />
+        <MetricCard label="Critical/High" value={report.summary.critical + report.summary.high} icon={AlertTriangle} accent="var(--c-critical)" />
+        <MetricCard label="Added Fields" value={report.summary.added} icon={GitBranch} accent="var(--green)" />
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Filter by field path…" />
+        <SelectFilter
+          value={filterSeverity}
+          onChange={setFilterSeverity}
+          options={[
+            { value: "ALL", label: "All Severities" },
+            { value: "CRITICAL", label: "Critical" },
+            { value: "HIGH", label: "High" },
+            { value: "MEDIUM", label: "Medium" },
+            { value: "LOW", label: "Low" },
+          ]}
+        />
+        <SelectFilter
+          value={filterType}
+          onChange={setFilterType}
+          options={[
+            { value: "ALL", label: "All Types" },
+            { value: "CHANGED", label: "Changed" },
+            { value: "ADDED", label: "Added" },
+            { value: "REMOVED", label: "Removed" },
+          ]}
+        />
+      </div>
+
+      {/* Findings */}
+      {findings.length === 0 ? (
+        <EmptyState icon={GitBranch} title="No findings match your filters" />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {findings.map((f) => (
+            <FindingRow key={f.id} f={f} />
+          ))}
+        </div>
+      )}
+
+      {/* Unchanged notice */}
+      {report.summary.unchanged > 0 && (
+        <div
+          style={{
+            padding: "10px 14px",
+            borderRadius: "7px",
+            background: "var(--bg-surface-2)",
+            border: "1px solid var(--border)",
+            fontSize: "12px",
+            color: "var(--text-muted)",
+          }}
+        >
+          {report.summary.unchanged} field{report.summary.unchanged !== 1 ? "s" : ""} unchanged and not shown.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main DriftPage ─────────────────────────────────────────────── */
 export function DriftPage() {
-  const [mode, setMode] = useState<Mode>("version");
-
-  // Baseline store state
   const [baselines, setBaselines] = useState<BaselineRecord[]>([]);
-  const [tenantIds, setTenantIds] = useState<string[]>([]);
-  const [selectedTenant, setSelectedTenant] = useState("");
+  const [loadingBaselines, setLoadingBaselines] = useState(true);
+  const [mode, setMode] = useState<"versions" | "paste">("versions");
+
+  // Version compare state
+  const [tenantId, setTenantId] = useState("");
   const [tenantVersions, setTenantVersions] = useState<string[]>([]);
   const [fromVersion, setFromVersion] = useState("");
   const [toVersion, setToVersion] = useState("");
-  const [loadingBaselines, setLoadingBaselines] = useState(true);
 
-  // Custom JSON state
+  // Paste mode state
   const [baselineJson, setBaselineJson] = useState("");
   const [candidateJson, setCandidateJson] = useState("");
-  const [customBaselineVersion, setCustomBaselineVersion] = useState("v1.0");
-  const [customCandidateVersion, setCustomCandidateVersion] = useState("proposed");
 
-  // Result state
   const [report, setReport] = useState<DriftReport | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter state
-  const [filterSeverity, setFilterSeverity] = useState<FilterSeverity>("ALL");
-  const [filterType, setFilterType] = useState<FilterType>("ALL");
-
-  // Load baselines on mount
   useEffect(() => {
-    api.listBaselines()
-      .then((d) => {
-        setBaselines(d.baselines);
-        const ids = [...new Set(d.baselines.map((b) => b.tenant_id))].sort();
-        setTenantIds(ids);
-        if (ids.length > 0) setSelectedTenant(ids[0]);
-      })
+    api
+      .listBaselines()
+      .then((d) => setBaselines(d.baselines))
       .catch(() => {})
       .finally(() => setLoadingBaselines(false));
   }, []);
 
-  // Load versions when tenant changes
-  useEffect(() => {
-    if (!selectedTenant) return;
-    api.getTenantBaselines(selectedTenant)
-      .then((d) => {
-        setTenantVersions(d.versions);
-        if (d.versions.length >= 1) setFromVersion(d.versions[0]);
-        if (d.versions.length >= 2) setToVersion(d.versions[1]);
-        else setToVersion(d.versions[0] ?? "");
-      })
-      .catch(() => {});
-  }, [selectedTenant]);
+  // Group baselines by tenant
+  const tenantGroups: Record<string, string[]> = {};
+  baselines.forEach((b) => {
+    if (!tenantGroups[b.tenant_id]) tenantGroups[b.tenant_id] = [];
+    if (!tenantGroups[b.tenant_id].includes(b.version))
+      tenantGroups[b.tenant_id].push(b.version);
+  });
+  const tenantIds = Object.keys(tenantGroups);
 
-  const runVersionComparison = useCallback(async () => {
-    if (!selectedTenant || !fromVersion || !toVersion) {
-      setError("Select a tenant and two versions to compare.");
-      return;
-    }
-    if (fromVersion === toVersion) {
-      setError("Select two different versions to compare.");
+  const handleTenantChange = useCallback(
+    (tid: string) => {
+      setTenantId(tid);
+      const versions = tenantGroups[tid] ?? [];
+      setTenantVersions(versions);
+      setFromVersion(versions[0] ?? "");
+      setToVersion(versions[1] ?? versions[0] ?? "");
+    },
+    [baselines]
+  );
+
+  const runVersionCompare = async () => {
+    if (!tenantId || !fromVersion || !toVersion) {
+      setError("Select a tenant and both versions.");
       return;
     }
     setError(null);
     setReport(null);
-    setLoading(true);
+    setAnalyzing(true);
     try {
-      const r = await api.compareBaselineVersions(selectedTenant, fromVersion, toVersion);
+      const r = await api.compareBaselineVersions(tenantId, fromVersion, toVersion);
       setReport(r);
-    } catch (e: unknown) {
+    } catch (e) {
       setError(e instanceof Error ? e.message : "Comparison failed.");
     } finally {
-      setLoading(false);
-    }
-  }, [selectedTenant, fromVersion, toVersion]);
-
-  const runCustomComparison = async () => {
-    if (!baselineJson.trim() || !candidateJson.trim()) {
-      setError("Paste both a baseline and a candidate configuration.");
-      return;
-    }
-    let baseline: Record<string, unknown>;
-    let candidate: Record<string, unknown>;
-    try {
-      baseline = JSON.parse(baselineJson);
-      candidate = JSON.parse(candidateJson);
-    } catch {
-      setError("Invalid JSON in one or both inputs.");
-      return;
-    }
-    setError(null);
-    setReport(null);
-    setLoading(true);
-    try {
-      const r = await api.detectDrift(baseline, candidate, customBaselineVersion, customCandidateVersion);
-      setReport(r);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Comparison failed.");
-    } finally {
-      setLoading(false);
+      setAnalyzing(false);
     }
   };
 
-  const handleRun = mode === "version" ? runVersionComparison : runCustomComparison;
+  const runPasteCompare = async () => {
+    let base: Record<string, unknown>;
+    let cand: Record<string, unknown>;
+    try { base = JSON.parse(baselineJson); } catch { setError("Invalid baseline JSON."); return; }
+    try { cand = JSON.parse(candidateJson); } catch { setError("Invalid candidate JSON."); return; }
+    setError(null);
+    setReport(null);
+    setAnalyzing(true);
+    try {
+      const r = await api.detectDrift(base, cand);
+      setReport(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Comparison failed.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
-  // Filtered findings
-  const filteredFindings = (report?.findings ?? []).filter((f) => {
-    if (filterSeverity !== "ALL" && f.severity !== filterSeverity) return false;
-    if (filterType !== "ALL" && f.drift_type !== filterType) return false;
-    return true;
-  });
-
-  const sortOrder: Record<DriftSeverity, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-  const sortedFindings = [...filteredFindings].sort(
-    (a, b) => sortOrder[a.severity] - sortOrder[b.severity]
-  );
+  if (report) {
+    return (
+      <div className="animate-fade-in">
+        <SectionHeader title="Configuration Drift" subtitle="Field-level deviation from approved baseline" />
+        <DriftReportView report={report} onClear={() => setReport(null)} />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Configuration Drift</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Compare a tenant configuration against an approved baseline or across versions. Detects added, removed, and changed fields with severity and evidence.
-        </p>
+    <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <SectionHeader
+        title="Configuration Drift"
+        subtitle="Detect field-level deviations between a baseline and a proposed configuration version."
+      />
+
+      {/* Mode tabs */}
+      <div style={{ display: "flex", gap: "0", borderBottom: "1px solid var(--border)" }}>
+        {(["versions", "paste"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            style={{
+              padding: "10px 18px",
+              fontSize: "13px",
+              fontWeight: mode === m ? 600 : 400,
+              color: mode === m ? "var(--accent)" : "var(--text-secondary)",
+              background: "none",
+              border: "none",
+              borderBottom: mode === m ? "2px solid var(--accent)" : "2px solid transparent",
+              cursor: "pointer",
+              marginBottom: "-1px",
+            }}
+          >
+            {m === "versions" ? "Version Compare" : "Paste JSON"}
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Left panel: input ──────────────────────────────────────── */}
-        <div className="lg:col-span-1 space-y-4">
-
-          {/* Mode toggle */}
-          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+      {/* Version compare panel */}
+      {mode === "versions" && (
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "10px",
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+          }}
+        >
+          <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0 }}>
+            Compare two stored approved baseline versions side-by-side.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "12px", alignItems: "end" }}>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>TENANT</label>
+              <select
+                value={tenantId}
+                onChange={(e) => handleTenantChange(e.target.value)}
+                style={{ width: "100%", padding: "8px 10px", fontSize: "13px", background: "var(--bg-surface-2)", border: "1px solid var(--border)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
+              >
+                <option value="">Select tenant…</option>
+                {tenantIds.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>BASELINE VERSION</label>
+              <select
+                value={fromVersion}
+                onChange={(e) => setFromVersion(e.target.value)}
+                disabled={!tenantId}
+                style={{ width: "100%", padding: "8px 10px", fontSize: "13px", background: "var(--bg-surface-2)", border: "1px solid var(--border)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
+              >
+                {tenantVersions.map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>CANDIDATE VERSION</label>
+              <select
+                value={toVersion}
+                onChange={(e) => setToVersion(e.target.value)}
+                disabled={!tenantId}
+                style={{ width: "100%", padding: "8px 10px", fontSize: "13px", background: "var(--bg-surface-2)", border: "1px solid var(--border)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
+              >
+                {tenantVersions.map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
             <button
-              onClick={() => { setMode("version"); setReport(null); setError(null); }}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === "version" ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+              onClick={runVersionCompare}
+              disabled={analyzing || !tenantId}
+              style={{
+                padding: "8px 18px",
+                background: analyzing ? "var(--bg-surface-3)" : "var(--accent)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: analyzing || !tenantId ? "not-allowed" : "pointer",
+                fontSize: "13px",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
             >
-              Version Compare
-            </button>
-            <button
-              onClick={() => { setMode("custom"); setReport(null); setError(null); }}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === "custom" ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
-            >
-              Paste JSON
+              {analyzing ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Analyzing…</> : <><GitCompare size={13} /> Compare</>}
             </button>
           </div>
 
-          {mode === "version" ? (
-            <Card>
-              <CardHeader><CardTitle>Stored Baselines</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                {loadingBaselines ? (
-                  <p className="text-sm text-slate-400 animate-pulse">Loading baselines…</p>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Tenant</label>
-                      <select
-                        value={selectedTenant}
-                        onChange={(e) => setSelectedTenant(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                      >
-                        {tenantIds.map((id) => (
-                          <option key={id} value={id}>{id}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">From Version (baseline)</label>
-                      <select
-                        value={fromVersion}
-                        onChange={(e) => setFromVersion(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                      >
-                        {tenantVersions.map((v) => (
-                          <option key={v} value={v}>{v}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">To Version (candidate)</label>
-                      <select
-                        value={toVersion}
-                        onChange={(e) => setToVersion(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                      >
-                        {tenantVersions.map((v) => (
-                          <option key={v} value={v}>{v}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Baseline list */}
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-2">All stored baselines</p>
-                      <ul className="space-y-1">
-                        {baselines.map((b) => (
-                          <li key={`${b.tenant_id}-${b.version}`} className="text-xs text-slate-600 flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
-                            <span className="font-mono">{b.tenant_id}</span>
-                            <span className="text-slate-400">v{b.version}</span>
-                            <span className="text-slate-300">·</span>
-                            <span className="text-slate-400">{b.baseline_label}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Baseline version label</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                  value={customBaselineVersion}
-                  onChange={(e) => setCustomBaselineVersion(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Baseline JSON (approved)</label>
-                <textarea
-                  rows={8}
-                  className="w-full font-mono text-xs border border-slate-200 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-y"
-                  placeholder='{"tenant_id": "...", "modules": {...}}'
-                  value={baselineJson}
-                  onChange={(e) => setBaselineJson(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Candidate version label</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                  value={customCandidateVersion}
-                  onChange={(e) => setCustomCandidateVersion(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Candidate JSON (proposed)</label>
-                <textarea
-                  rows={8}
-                  className="w-full font-mono text-xs border border-slate-200 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-y"
-                  placeholder='{"tenant_id": "...", "modules": {...}}'
-                  value={candidateJson}
-                  onChange={(e) => setCandidateJson(e.target.value)}
-                />
-              </div>
+          {/* Available baselines info */}
+          {!loadingBaselines && tenantIds.length > 0 && (
+            <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+              {tenantIds.length} tenant{tenantIds.length !== 1 ? "s" : ""} with stored baselines:{" "}
+              {tenantIds.map((t, i) => (
+                <span key={t}>
+                  <code style={{ color: "var(--text-secondary)" }}>{t}</code>
+                  {i < tenantIds.length - 1 ? ", " : ""}
+                </span>
+              ))}
             </div>
           )}
+        </div>
+      )}
 
-          <button
-            onClick={handleRun}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? <RefreshCw size={15} className="animate-spin" /> : <GitCompare size={15} />}
-            {loading ? "Comparing…" : "Run Drift Comparison"}
-          </button>
-
-          {report && (
+      {/* Paste JSON panel */}
+      {mode === "paste" && (
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "10px",
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+          }}
+        >
+          <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0 }}>
+            Paste two raw configurations to compare them directly.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>
+                BASELINE JSON
+              </label>
+              <textarea
+                value={baselineJson}
+                onChange={(e) => setBaselineJson(e.target.value)}
+                placeholder='{"tenant_id": "...", "modules": {...}}'
+                rows={12}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "12px",
+                  fontFamily: "monospace",
+                  background: "var(--bg-surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                  resize: "vertical",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>
+                CANDIDATE JSON
+              </label>
+              <textarea
+                value={candidateJson}
+                onChange={(e) => setCandidateJson(e.target.value)}
+                placeholder='{"tenant_id": "...", "modules": {...}}'
+                rows={12}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "12px",
+                  fontFamily: "monospace",
+                  background: "var(--bg-surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                  resize: "vertical",
+                }}
+              />
+            </div>
+          </div>
+          <div>
             <button
-              onClick={() => { setReport(null); setError(null); }}
-              className="w-full px-4 py-2 border border-slate-200 text-slate-600 rounded-md text-sm hover:bg-slate-50"
+              onClick={runPasteCompare}
+              disabled={analyzing}
+              style={{
+                padding: "8px 20px",
+                background: analyzing ? "var(--bg-surface-3)" : "var(--accent)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: analyzing ? "not-allowed" : "pointer",
+                fontSize: "13px",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
             >
-              Clear Results
+              {analyzing ? <><RefreshCw size={13} /> Analyzing…</> : <><GitCompare size={13} /> Detect Drift</>}
             </button>
-          )}
+          </div>
         </div>
+      )}
 
-        {/* ── Right panel: results ───────────────────────────────────── */}
-        <div className="lg:col-span-2 space-y-4">
-
-          {/* Loading */}
-          {loading && (
-            <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-indigo-200 bg-indigo-50 rounded-lg gap-3">
-              <RefreshCw size={28} className="text-indigo-400 animate-spin" />
-              <p className="text-sm font-medium text-indigo-700">Running drift comparison…</p>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && !loading && (
-            <div className="rounded-md bg-red-50 border border-red-200 p-4 flex items-start gap-3">
-              <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-red-700">Comparison failed</p>
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Empty */}
-          {!loading && !error && !report && (
-            <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-slate-200 rounded-lg gap-3 text-slate-400">
-              <Upload size={32} className="opacity-40" />
-              <div className="text-center">
-                <p className="text-sm font-medium">
-                  {mode === "version"
-                    ? "Select a tenant and two versions, then click Run"
-                    : "Paste baseline and candidate JSON, then click Run"}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Results */}
-          {report && !loading && (
-            <>
-              {/* Summary */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{report.tenant_name} — Drift Report</CardTitle>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {report.tenant_id} · {report.baseline_version} → {report.candidate_version}
-                      </p>
-                    </div>
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
-                      report.summary.critical > 0 ? "bg-red-100 text-red-700 border-red-200" :
-                      report.summary.high > 0 ? "bg-orange-100 text-orange-700 border-orange-200" :
-                      report.summary.total_findings > 0 ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
-                      "bg-green-100 text-green-700 border-green-200"
-                    }`}>
-                      {report.summary.total_findings === 0 ? "No Drift" :
-                       report.summary.critical > 0 ? "Critical Drift" :
-                       report.summary.high > 0 ? "High Drift" : "Drift Found"}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 gap-3 text-center mb-4">
-                    <div>
-                      <p className="text-xl font-bold text-slate-900">{report.summary.total_findings}</p>
-                      <p className="text-xs text-slate-500">Total</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-red-600">{report.summary.critical}</p>
-                      <p className="text-xs text-slate-500">Critical</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-orange-600">{report.summary.high}</p>
-                      <p className="text-xs text-slate-500">High</p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-yellow-600">{report.summary.medium}</p>
-                      <p className="text-xs text-slate-500">Medium</p>
-                    </div>
-                  </div>
-
-                  {/* Type breakdown */}
-                  <div className="grid grid-cols-3 gap-3 text-center border-t border-slate-100 pt-3">
-                    <div>
-                      <p className="text-lg font-bold text-green-600">{report.summary.added}</p>
-                      <p className="text-xs text-slate-500">Added</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-red-600">{report.summary.removed}</p>
-                      <p className="text-xs text-slate-500">Removed</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-amber-600">{report.summary.changed}</p>
-                      <p className="text-xs text-slate-500">Changed</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* No drift */}
-              {report.summary.total_findings === 0 ? (
-                <div className="flex flex-col items-center justify-center h-28 bg-green-50 rounded-lg border border-green-200 gap-1 text-green-700">
-                  <p className="text-sm font-semibold">✓ No drift detected</p>
-                  <p className="text-xs text-green-600">The candidate is identical to the baseline configuration</p>
-                </div>
-              ) : (
-                <>
-                  {/* Filters */}
-                  <div className="flex flex-wrap gap-3">
-                    <select
-                      value={filterSeverity}
-                      onChange={(e) => setFilterSeverity(e.target.value as FilterSeverity)}
-                      className="px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                    >
-                      <option value="ALL">All Severities</option>
-                      {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as DriftSeverity[]).map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterType}
-                      onChange={(e) => setFilterType(e.target.value as FilterType)}
-                      className="px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                    >
-                      <option value="ALL">All Types</option>
-                      {(["ADDED", "REMOVED", "CHANGED"] as DriftType[]).map((t) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                    {(filterSeverity !== "ALL" || filterType !== "ALL") && (
-                      <p className="self-center text-sm text-slate-500">
-                        Showing {sortedFindings.length} of {report.findings.length}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Findings */}
-                  <div className="space-y-2">
-                    {sortedFindings.map((f) => (
-                      <DriftFindingRow key={f.id} finding={f} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      {error && <ErrorState message={error} />}
     </div>
   );
 }

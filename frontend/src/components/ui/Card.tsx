@@ -4,31 +4,62 @@ import { cn } from "../../lib/utils";
 interface CardProps {
   className?: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
-export function Card({ className, children }: CardProps) {
+export function Card({ className, children, style }: CardProps) {
   return (
-    <div className={cn("bg-white rounded-lg border border-slate-200 shadow-sm", className)}>
+    <div
+      className={cn(className)}
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "10px",
+        overflow: "hidden",
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
 }
 
-export function CardHeader({ className, children }: CardProps) {
+export function CardHeader({ className, children, style }: CardProps) {
   return (
-    <div className={cn("px-6 py-4 border-b border-slate-100", className)}>
+    <div
+      className={cn(className)}
+      style={{
+        padding: "14px 20px",
+        borderBottom: "1px solid var(--border)",
+        background: "var(--bg-surface-2)",
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
 }
 
-export function CardContent({ className, children }: CardProps) {
-  return <div className={cn("px-6 py-4", className)}>{children}</div>;
+export function CardContent({ className, children, style }: CardProps) {
+  return (
+    <div className={cn(className)} style={{ padding: "16px 20px", ...style }}>
+      {children}
+    </div>
+  );
 }
 
-export function CardTitle({ className, children }: CardProps) {
+export function CardTitle({ className, children, style }: CardProps) {
   return (
-    <h3 className={cn("text-base font-semibold text-slate-900", className)}>
+    <h3
+      className={cn(className)}
+      style={{
+        fontSize: "13px",
+        fontWeight: 600,
+        color: "var(--text-primary)",
+        margin: 0,
+        ...style,
+      }}
+    >
       {children}
     </h3>
   );
