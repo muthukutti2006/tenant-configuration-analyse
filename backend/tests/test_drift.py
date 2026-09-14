@@ -236,6 +236,51 @@ class TestBaselineStore:
         assert report.summary.total_findings > 0
         assert report.summary.changed > 0
 
+    # ── Regression tests for version 404 fix ────────────────────────────────
+
+    def test_baseline_record_version_matches_file_stem(self):
+        """REGRESSION: BaselineRecord.version must equal the file stem (e.g. 'v2.0'),
+        NOT the JSON-internal version field (e.g. '2.0'). If this fails the UI
+        will receive '2.0', pass it back to the API, and get a 404 because the
+        file is named v2.0.json."""
+        rec = get_baseline_record("UNI-001", "v2.0")
+        assert rec is not None, "v2.0 baseline must be loadable"
+        assert rec.version == "v2.0", (
+            f"Expected version 'v2.0' (file stem) but got '{rec.version}'. "
+            "This mismatch causes a 404 in the version-compare API endpoint."
+        )
+
+    def test_baseline_record_v1_version_matches_file_stem(self):
+        """REGRESSION: same check for v1.0."""
+        rec = get_baseline_record("UNI-001", "v1.0")
+        assert rec is not None
+        assert rec.version == "v1.0", (
+            f"Expected version 'v1.0' but got '{rec.version}'."
+        )
+
+    def test_list_baselines_versions_are_loadable(self):
+        """REGRESSION: every version string returned by list_versions() must
+        be directly usable as a load_baseline() key — no 404 should occur."""
+        for tenant_id in list_tenants_with_baselines():
+            for version in list_versions(tenant_id):
+                raw = load_baseline(tenant_id, version)
+                assert raw is not None, (
+                    f"load_baseline('{tenant_id}', '{version}') returned None — "
+                    "version string from list_versions() must match file stem exactly."
+                )
+
+    def test_baseline_record_versions_are_loadable(self):
+        """REGRESSION: every BaselineRecord.version exposed via the API must be
+        usable in a subsequent load_baseline() call — simulates the UI round-trip
+        that caused the 404."""
+        for rec in list_all_baselines():
+            raw = load_baseline(rec.tenant_id, rec.version)
+            assert raw is not None, (
+                f"BaselineRecord.version='{rec.version}' for tenant '{rec.tenant_id}' "
+                "cannot be used to reload the baseline — this would cause a 404. "
+                "Ensure get_baseline_record() always uses the file-stem as the version."
+            )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Rule Catalogue
@@ -357,7 +402,8 @@ class TestNewAPIEndpoints:
         assert resp.status_code == 200
         data = resp.json()
         assert data["tenant_id"] == "UNI-001"
-        assert data["version"] == "1.0"
+        # After the 404 fix, version is the file stem ("v1.0") not the JSON internal field ("1.0")
+        assert data["version"] == "v1.0"
 
     def test_get_baseline_not_found(self):
         resp = client.get("/api/baselines/NONEXISTENT/v99.0")

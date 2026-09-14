@@ -18,6 +18,12 @@ const TYPE_STYLE: Record<string, React.CSSProperties> = {
   validation: { background: "var(--bg-surface-3)",   color: "var(--text-muted)" },
 };
 
+const RULE_TYPE_LABEL: Record<string, string> = {
+  conflict:   "Conflict",
+  drift:      "Drift",
+  validation: "Validation",
+};
+
 function RuleRow({ rule }: { rule: CatalogRule }) {
   const [open, setOpen] = useState(false);
 
@@ -32,7 +38,9 @@ function RuleRow({ rule }: { rule: CatalogRule }) {
       }}
     >
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
         style={{
           width: "100%",
           background: "none",
@@ -61,7 +69,7 @@ function RuleRow({ rule }: { rule: CatalogRule }) {
             ...(TYPE_STYLE[rule.rule_type] ?? {}),
           }}
         >
-          {rule.rule_type.toUpperCase()}
+          {RULE_TYPE_LABEL[rule.rule_type] ?? rule.rule_type}
         </span>
         <span
           style={{

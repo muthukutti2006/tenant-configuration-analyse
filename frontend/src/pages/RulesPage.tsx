@@ -53,10 +53,27 @@ export function RulesPage() {
     <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
       <SectionHeader
         title="Detection Rules"
-        subtitle="All conflict detection rules and the deterministic severity classification policy."
+        subtitle="All conflict detection rules with deterministic severity classification policy."
         badge={`${rules.length} rules`}
       />
 
+      {/* Distinction note */}
+      <div
+        style={{
+          padding: "12px 16px",
+          background: "var(--accent-light)",
+          border: "1px solid rgba(99,102,241,0.25)",
+          borderRadius: "var(--radius-sm)",
+          fontSize: "12px",
+          color: "var(--text-secondary)",
+          lineHeight: 1.5,
+        }}
+      >
+        <strong style={{ color: "var(--accent)" }}>Detection Rules</strong> (this page) lists the raw rule
+        objects used by the conflict detection engine and their severity policy.{" "}
+        The <strong style={{ color: "var(--accent)" }}>Rules Catalogue</strong> (/catalog) provides the full
+        machine-readable catalogue including conditions, evidence templates, and per-rule metadata.
+      </div>
       {/* Metric cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "12px" }}>
         <MetricCard label="Detection Rules" value={rules.length} icon={FileText} accent="var(--accent)" />
@@ -161,7 +178,7 @@ export function RulesPage() {
                       <td style={{ padding: "10px 14px" }}>
                         <ConflictTypeBadge type={r.type} />
                       </td>
-                      <td style={{ padding: "10px 14px", fontSize: "12px", color: "var(--text-secondary)" }}>{r.description}</td>
+                      <td style={{ padding: "10px 14px", fontSize: "12px", color: "var(--text-secondary)", maxWidth: "320px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.description}>{r.description}</td>
                       <td style={{ padding: "10px 14px" }}>
                         <SeverityBadge severity={r.default_severity} />
                       </td>

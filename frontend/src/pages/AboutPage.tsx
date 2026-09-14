@@ -6,16 +6,16 @@ const COMPLETED = [
   "Configuration parser (JSON input, edge case handling)",
   "Configuration validator (type/range checks)",
   "Rule normalizer (canonical key-value pairs)",
-  "Conflict detection engine (5 conflict categories, 10 rules)",
+  "Conflict detection engine (5 conflict types)",
+  "18-rule machine-readable catalogue (12 conflict + 6 drift rules across 6 categories)",
   "Severity classifier (CRITICAL/HIGH/MEDIUM/LOW policy)",
   "Evidence generator (field-level structured evidence)",
-  "FastAPI backend with 19 REST endpoints",
+  "FastAPI backend with 16 REST endpoints",
   "React + TypeScript + Tailwind v4 frontend dashboard",
   "8 realistic test tenant configurations",
-  "93 automated pytest tests (43 original + 50 drift tests)",
+  "97 automated pytest tests (43 original + 50 drift + 4 regression)",
   "Versioned Baseline Store (3 tenants, 4 baselines)",
   "Configuration Drift Detection engine",
-  "Machine-readable Rule Catalogue (18 rules)",
   "Synthetic before/after validation experiment",
   "Architecture + testing + drift documentation",
   "CI/CD pipeline (GitHub Actions)",
@@ -182,7 +182,7 @@ export function AboutPage() {
           {[
             { label: "Backend", code: "cd backend\npip install -r requirements.txt\nuvicorn main:app --reload --port 8000" },
             { label: "Frontend", code: "cd frontend\nnpm install\nnpm run dev" },
-            { label: "Tests", code: "cd backend\npytest tests/ -v\n\n# 93 tests should pass" },
+            { label: "Tests", code: "cd backend\npytest tests/ -v\n\n# 97 tests should pass" },
           ].map(({ label, code }) => (
             <div key={label}>
               <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>

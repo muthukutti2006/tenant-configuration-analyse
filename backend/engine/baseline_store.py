@@ -56,14 +56,22 @@ def load_latest_baseline(tenant_id: str) -> Optional[Dict[str, Any]]:
 
 
 def get_baseline_record(tenant_id: str, version: str) -> Optional[BaselineRecord]:
-    """Return a BaselineRecord for the given tenant + version."""
+    """Return a BaselineRecord for the given tenant + version.
+
+    IMPORTANT: ``version`` must be the file-stem (e.g. ``v1.0``), not the
+    JSON-internal ``"version"`` field which may lack the ``v`` prefix.
+    We always expose the file-stem so the caller can pass it back to the API
+    without hitting a 404.
+    """
     raw = load_baseline(tenant_id, version)
     if raw is None:
         return None
     return BaselineRecord(
         tenant_id=raw.get("tenant_id", tenant_id),
         tenant_name=raw.get("tenant_name", "Unknown"),
-        version=raw.get("version", version),
+        # Use the file-stem as the authoritative version key so the UI can
+        # round-trip it back to load_baseline() without a 404.
+        version=version,
         baseline_label=raw.get("baseline_label", "approved"),
         timestamp=raw.get("timestamp"),
         approved_by=raw.get("approved_by"),

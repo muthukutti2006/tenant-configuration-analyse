@@ -100,7 +100,7 @@ export function AnalyzePage() {
 
   const hasResult = result !== null;
   const isPresetMode = !useCustom;
-  const buttonLabel = loading ? "Analysing…" : hasResult && isPresetMode ? "Run Again" : "Run Analysis";
+
 
   // Determine workflow step
   const step = loading ? 2 : hasResult ? (result.conflicts.length > 0 ? 3 : 4) : isPresetMode && selectedConfig ? 2 : 1;
@@ -126,17 +126,22 @@ export function AnalyzePage() {
       >
         <Step n={1} label="Select Configuration" done={step > 1} active={step === 1} />
         <span style={{ color: "var(--border-strong)", alignSelf: "center" }}>→</span>
-        <Step n={2} label="Analyze" done={step > 2} active={step === 2} />
+        <Step n={2} label="Automatic Analysis" done={step > 2} active={step === 2} />
         <span style={{ color: "var(--border-strong)", alignSelf: "center" }}>→</span>
         <Step n={3} label="Review Conflicts" done={step === 4} active={step === 3} />
         <span style={{ color: "var(--border-strong)", alignSelf: "center" }}>→</span>
         <Step n={4} label="Examine Evidence" done={false} active={step === 4} />
+        {step > 1 && (
+          <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--text-muted)", alignSelf: "center", flexShrink: 0 }}>
+            ✓ Analysis runs automatically on selection
+          </span>
+        )}
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "280px 1fr",
+          gridTemplateColumns: "minmax(240px, 280px) 1fr",
           gap: "20px",
         }}
       >
@@ -151,13 +156,14 @@ export function AnalyzePage() {
               overflow: "hidden",
             }}
           >
-            {["Select Preset", "Paste JSON"].map((label, i) => {
-              const isActive = (i === 0 && !useCustom) || (i === 1 && useCustom);
+            {[{ label: "Select Preset", idx: 0 }, { label: "Paste JSON", idx: 1 }].map(({ label, idx }) => {
+              const isActive = (idx === 0 && !useCustom) || (idx === 1 && useCustom);
               return (
                 <button
                   key={label}
+                  type="button"
                   onClick={() => {
-                    const custom = i === 1;
+                    const custom = idx === 1;
                     setUseCustom(custom);
                     if (custom !== useCustom) { setResult(null); setError(null); }
                   }}
@@ -170,7 +176,7 @@ export function AnalyzePage() {
                     background: isActive ? "var(--accent)" : "transparent",
                     border: "none",
                     cursor: "pointer",
-                    transition: "background 150ms",
+                    transition: "background 150ms, color 150ms",
                   }}
                 >
                   {label}
@@ -270,43 +276,22 @@ export function AnalyzePage() {
 
           {/* Actions */}
           <button
+            type="button"
             onClick={handleManualAnalyze}
             disabled={loading}
-            style={{
-              padding: "9px",
-              background: loading ? "var(--bg-surface-3)" : "var(--accent)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "7px",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontSize: "13px",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "7px",
-            }}
+            className="btn-primary"
+            style={{ justifyContent: "center", padding: "9px" }}
           >
             {loading ? <RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Play size={14} />}
-            {buttonLabel}
+            {loading ? "Analysing…" : hasResult && isPresetMode ? "Run Again" : "Run Analysis"}
           </button>
 
           {hasResult && !loading && (
             <button
+              type="button"
               onClick={() => { setResult(null); setError(null); lastAnalyzedId.current = null; }}
-              style={{
-                padding: "8px",
-                background: "var(--bg-surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: "7px",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-                fontSize: "12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-              }}
+              className="btn-ghost"
+              style={{ justifyContent: "center" }}
             >
               <RotateCcw size={13} /> Clear Results
             </button>

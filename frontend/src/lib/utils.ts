@@ -35,14 +35,30 @@ export function severityAccent(severity: string): string {
   }
 }
 
-export function conflictTypeLabel(type: ConflictType): string {
-  switch (type) {
-    case "DIRECT_RULE_CONFLICT":          return "Direct Rule Conflict";
-    case "FEATURE_FLAG_CONFLICT":         return "Feature Flag Conflict";
-    case "DEPENDENCY_CONFLICT":           return "Dependency Conflict";
-    case "DUPLICATE_OR_CONTRADICTORY_RULE": return "Duplicate / Contradictory Rule";
-    case "INVALID_CONFIGURATION":         return "Invalid Configuration";
-  }
+/** Short labels — for chart axes and compact badges where space is limited */
+export const CONFLICT_TYPE_SHORT: Record<string, string> = {
+  DIRECT_RULE_CONFLICT:             "Direct Conflict",
+  FEATURE_FLAG_CONFLICT:            "Feature Flag",
+  DEPENDENCY_CONFLICT:              "Dependency",
+  DUPLICATE_OR_CONTRADICTORY_RULE:  "Duplicate Rule",
+  INVALID_CONFIGURATION:            "Invalid Config",
+};
+
+/** Full labels — for detailed views, tables, tooltips */
+export const CONFLICT_TYPE_LABEL: Record<string, string> = {
+  DIRECT_RULE_CONFLICT:             "Direct Contradiction",
+  FEATURE_FLAG_CONFLICT:            "Feature Flag Mismatch",
+  DEPENDENCY_CONFLICT:              "Dependency Conflict",
+  DUPLICATE_OR_CONTRADICTORY_RULE:  "Duplicate Inconsistency",
+  INVALID_CONFIGURATION:            "Invalid Configuration",
+};
+
+export function conflictTypeLabel(type: string): string {
+  return CONFLICT_TYPE_LABEL[type] ?? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function conflictTypeShort(type: string): string {
+  return CONFLICT_TYPE_SHORT[type] ?? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function statusColor(status: string) {

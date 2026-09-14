@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { Conflict, Severity, ConflictType } from "../types";
+import type { Conflict } from "../types";
 import { ConflictCard } from "../components/conflicts/ConflictCard";
-import { SectionHeader, ErrorState, FilterBar, SearchInput, SelectFilter, EmptyState } from "../components/ui/Shared";
-import { MetricCard } from "../components/ui/MetricCard";
-import { AlertTriangle, Shield, AlertOctagon, Info } from "lucide-react";
+import { SectionHeader, ErrorState, FilterBar, SearchInput, SelectFilter } from "../components/ui/Shared";
+import { MetricCard, MetricCardSkeleton } from "../components/ui/MetricCard";
+import { AlertTriangle, Shield, AlertOctagon, Info, CheckCircle2 } from "lucide-react";
 
 const SEVERITY_OPTIONS: { value: string; label: string }[] = [
   { value: "ALL", label: "All Severities" },
@@ -16,11 +16,11 @@ const SEVERITY_OPTIONS: { value: string; label: string }[] = [
 
 const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "ALL", label: "All Types" },
-  { value: "DIRECT_RULE_CONFLICT", label: "Direct Rule Conflict" },
-  { value: "FEATURE_FLAG_CONFLICT", label: "Feature Flag Conflict" },
-  { value: "DEPENDENCY_CONFLICT", label: "Dependency Conflict" },
-  { value: "DUPLICATE_OR_CONTRADICTORY_RULE", label: "Duplicate / Contradictory" },
-  { value: "INVALID_CONFIGURATION", label: "Invalid Configuration" },
+  { value: "DIRECT_RULE_CONFLICT",          label: "Direct Contradiction" },
+  { value: "FEATURE_FLAG_CONFLICT",         label: "Feature Flag Mismatch" },
+  { value: "DEPENDENCY_CONFLICT",           label: "Dependency Conflict" },
+  { value: "DUPLICATE_OR_CONTRADICTORY_RULE", label: "Duplicate Inconsistency" },
+  { value: "INVALID_CONFIGURATION",         label: "Invalid Configuration" },
 ];
 
 export function ConflictsPage() {
@@ -66,12 +66,10 @@ export function ConflictsPage() {
 
   if (loading) {
     return (
-      <div>
+      <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
         <SectionHeader title="All Conflicts" subtitle="Loading conflict intelligence…" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px", marginBottom: "20px" }}>
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="skeleton" style={{ height: "80px", borderRadius: "10px" }} />
-          ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px" }}>
+          {[0, 1, 2, 3].map((i) => <MetricCardSkeleton key={i} />)}
         </div>
       </div>
     );
@@ -96,9 +94,9 @@ export function ConflictsPage() {
 
       {/* Filters */}
       <FilterBar>
-        <SearchInput value={search} onChange={setSearch} placeholder="Search conflicts, tenants…" />
-        <SelectFilter value={filterSeverity} onChange={setFilterSeverity} options={SEVERITY_OPTIONS} />
-        <SelectFilter value={filterType} onChange={setFilterType} options={TYPE_OPTIONS} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search conflicts, tenants…" ariaLabel="Search conflicts" />
+        <SelectFilter value={filterSeverity} onChange={setFilterSeverity} options={SEVERITY_OPTIONS} ariaLabel="Filter by severity" />
+        <SelectFilter value={filterType} onChange={setFilterType} options={TYPE_OPTIONS} ariaLabel="Filter by conflict type" />
         {(search || filterSeverity !== "ALL" || filterType !== "ALL") && (
           <span style={{ fontSize: "12px", color: "var(--text-muted)", alignSelf: "center" }}>
             {filtered.length} of {conflicts.length} shown
@@ -107,12 +105,44 @@ export function ConflictsPage() {
       </FilterBar>
 
       {/* Conflict list */}
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={AlertTriangle}
-          title="No conflicts match your filters"
-          description="Adjust the search or filters above to see results."
-        />
+      {conflicts.length === 0 ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "32px",
+            background: "var(--green-light)",
+            border: "1px solid rgba(34,197,94,0.25)",
+            borderRadius: "var(--radius-card)",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "var(--green)",
+          }}
+        >
+          <CheckCircle2 size={20} />
+          No conflicts detected — all tenant configurations are clean.
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "40px", background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-card)", textAlign: "center" }}>
+          <AlertTriangle size={24} style={{ color: "var(--text-muted)" }} />
+          <div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+              No conflicts match the selected filters
+            </div>
+            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+              {conflicts.length} conflict{conflicts.length !== 1 ? "s" : ""} exist in total — adjust your search or filters to see them.
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => { setSearch(""); setFilterSeverity("ALL"); setFilterType("ALL"); }}
+          >
+            Clear Filters
+          </button>
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {filtered.map((c) => (

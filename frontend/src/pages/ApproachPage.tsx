@@ -22,7 +22,7 @@ const APPROACH_CHOSEN = {
     "Every decision is explainable to a non-technical stakeholder.",
     "No training data required.",
     "Easy to audit: rules are code, readable by a developer.",
-    "Fast — runs in milliseconds even for large configurations.",
+    "Deterministic automated evaluation — no model training or inference overhead.",
     "False-positive rate is controllable by refining rules.",
   ],
   disadvantages: [
@@ -259,16 +259,17 @@ export function ApproachPage() {
             </div>
             <span
               style={{
-                fontSize: "10px",
-                padding: "3px 10px",
+                fontSize: "11px",
+                padding: "4px 12px",
                 borderRadius: "12px",
                 fontWeight: 700,
-                background: "rgba(234,179,8,0.12)",
+                background: "rgba(234,179,8,0.15)",
                 color: "var(--c-medium)",
-                border: "1px solid rgba(234,179,8,0.3)",
+                border: "1px solid rgba(234,179,8,0.4)",
+                letterSpacing: "0.04em",
               }}
             >
-              ⚠ SYNTHETIC DATA
+              ⚠ SYNTHETIC DATA — Not from a real production system
             </span>
           </div>
           <div style={{ padding: "16px 20px" }}>

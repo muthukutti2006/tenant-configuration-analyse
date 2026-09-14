@@ -32,7 +32,8 @@ export function Layout({ children }: LayoutProps) {
           style={{
             flex: 1,
             overflow: "auto",
-            padding: "24px",
+            overflowX: "hidden",
+            padding: "24px 20px",
           }}
         >
           <div style={{ maxWidth: "1400px", margin: "0 auto" }}>{children}</div>

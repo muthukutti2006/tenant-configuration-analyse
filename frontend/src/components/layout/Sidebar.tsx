@@ -11,6 +11,7 @@ import {
   BookOpen,
   GitBranch,
   ChevronLeft,
+  User,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -39,6 +40,12 @@ const NAV_GROUPS = [
     items: [
       { to: "/approach", label: "Technical Approach", icon: GitCompare },
       { to: "/about", label: "Documentation", icon: BookOpen },
+    ],
+  },
+  {
+    label: "ACCOUNT",
+    items: [
+      { to: "/profile", label: "Profile", icon: User },
     ],
   },
 ];
@@ -123,6 +130,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
         {open && (
           <button
             onClick={onToggle}
+            type="button"
             style={{
               background: "none",
               border: "none",
@@ -210,16 +218,15 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
             flexShrink: 0,
           }}
         >
-          <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>Review-2 Prototype</div>
+          <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em" }}>CONFIQRA · v2.0</div>
           <div
             style={{
               fontSize: "10px",
               color: "var(--text-muted)",
-              fontFamily: "monospace",
               marginTop: "1px",
             }}
           >
-            v2.0.0-review2
+            Config Intelligence Platform
           </div>
         </div>
       )}

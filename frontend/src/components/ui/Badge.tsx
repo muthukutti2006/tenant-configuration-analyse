@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../../lib/utils";
+import { conflictTypeLabel } from "../../lib/utils";
 import type { Severity } from "../../types";
 
 /* ── SeverityBadge ─────────────────────────────────────────────── */
@@ -33,7 +34,7 @@ export function ConflictTypeBadge({ type, className }: { type: string; className
         border: "1px solid var(--border)",
       }}
     >
-      {type.replace(/_/g, " ")}
+      {conflictTypeLabel(type)}
     </span>
   );
 }

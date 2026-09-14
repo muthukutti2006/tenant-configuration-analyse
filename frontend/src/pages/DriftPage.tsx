@@ -53,7 +53,9 @@ function FindingRow({ f }: { f: DriftFinding }) {
     >
       {/* Row header */}
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
         style={{
           width: "100%",
           background: "none",
@@ -184,14 +186,17 @@ function DriftReportView({ report, onClear }: { report: DriftReport; onClear: ()
         }}
       >
         <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Baseline</div>
-          <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{report.tenant_id}</div>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Baseline</div>
+          <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>{report.tenant_name}</div>
+          <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px", fontFamily: "monospace" }}>
+            {report.tenant_id}
+          </div>
           <div
             style={{
               fontSize: "12px",
               fontFamily: "monospace",
               color: "var(--accent)",
-              marginTop: "2px",
+              marginTop: "6px",
               padding: "2px 8px",
               background: "var(--accent-light)",
               borderRadius: "4px",
@@ -209,8 +214,11 @@ function DriftReportView({ report, onClear }: { report: DriftReport; onClear: ()
         </div>
 
         <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Candidate</div>
-          <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{report.tenant_name}</div>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Candidate</div>
+          <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>{report.tenant_name}</div>
+          <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px", fontFamily: "monospace" }}>
+            {report.tenant_id}
+          </div>
           <div
             style={{
               fontSize: "12px",
@@ -339,19 +347,19 @@ export function DriftPage() {
       .finally(() => setLoadingBaselines(false));
   }, []);
 
-  // Group baselines by tenant
-  const tenantGroups: Record<string, string[]> = {};
+  // Group baselines by tenant — track both versions and the display name
+  const tenantGroups: Record<string, { versions: string[]; name: string }> = {};
   baselines.forEach((b) => {
-    if (!tenantGroups[b.tenant_id]) tenantGroups[b.tenant_id] = [];
-    if (!tenantGroups[b.tenant_id].includes(b.version))
-      tenantGroups[b.tenant_id].push(b.version);
+    if (!tenantGroups[b.tenant_id]) tenantGroups[b.tenant_id] = { versions: [], name: b.tenant_name };
+    if (!tenantGroups[b.tenant_id].versions.includes(b.version))
+      tenantGroups[b.tenant_id].versions.push(b.version);
   });
   const tenantIds = Object.keys(tenantGroups);
 
   const handleTenantChange = useCallback(
     (tid: string) => {
       setTenantId(tid);
-      const versions = tenantGroups[tid] ?? [];
+      const versions = tenantGroups[tid]?.versions ?? [];
       setTenantVersions(versions);
       setFromVersion(versions[0] ?? "");
       setToVersion(versions[1] ?? versions[0] ?? "");
@@ -416,6 +424,7 @@ export function DriftPage() {
         {(["versions", "paste"] as const).map((m) => (
           <button
             key={m}
+            type="button"
             onClick={() => setMode(m)}
             style={{
               padding: "10px 18px",
@@ -460,7 +469,7 @@ export function DriftPage() {
               >
                 <option value="">Select tenant…</option>
                 {tenantIds.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>{tenantGroups[t].name} ({t})</option>
                 ))}
               </select>
             </div>
@@ -487,21 +496,10 @@ export function DriftPage() {
               </select>
             </div>
             <button
+              type="button"
               onClick={runVersionCompare}
               disabled={analyzing || !tenantId}
-              style={{
-                padding: "8px 18px",
-                background: analyzing ? "var(--bg-surface-3)" : "var(--accent)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                cursor: analyzing || !tenantId ? "not-allowed" : "pointer",
-                fontSize: "13px",
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
+              className="btn-primary"
             >
               {analyzing ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Analyzing…</> : <><GitCompare size={13} /> Compare</>}
             </button>
@@ -513,7 +511,7 @@ export function DriftPage() {
               {tenantIds.length} tenant{tenantIds.length !== 1 ? "s" : ""} with stored baselines:{" "}
               {tenantIds.map((t, i) => (
                 <span key={t}>
-                  <code style={{ color: "var(--text-secondary)" }}>{t}</code>
+                  <code style={{ color: "var(--text-secondary)" }}>{tenantGroups[t].name}</code>
                   {i < tenantIds.length - 1 ? ", " : ""}
                 </span>
               ))}
@@ -588,23 +586,13 @@ export function DriftPage() {
           </div>
           <div>
             <button
+              type="button"
               onClick={runPasteCompare}
               disabled={analyzing}
-              style={{
-                padding: "8px 20px",
-                background: analyzing ? "var(--bg-surface-3)" : "var(--accent)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                cursor: analyzing ? "not-allowed" : "pointer",
-                fontSize: "13px",
-                fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
+              className="btn-primary"
             >
-              {analyzing ? <><RefreshCw size={13} /> Analyzing…</> : <><GitCompare size={13} /> Detect Drift</>}
+              {analyzing ? <><RefreshCw size={13} /></> : <><GitCompare size={13} /></>}
+              {analyzing ? "Analyzing…" : "Detect Drift"}
             </button>
           </div>
         </div>
